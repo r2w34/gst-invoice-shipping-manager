@@ -120,3 +120,47 @@ model AppSettings {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }
+
+model Order {
+  id                    String   @id @default(cuid())
+  shop                  String
+  shopifyOrderId        String
+  orderNumber           String
+  email                 String?
+  phone                 String?
+  financialStatus       String?
+  fulfillmentStatus     String?
+  totalPrice            Float    @default(0)
+  subtotalPrice         Float    @default(0)
+  totalTax              Float    @default(0)
+  currency              String   @default("INR")
+  orderDate             DateTime
+  updatedAt             DateTime @updatedAt
+  createdAt             DateTime @default(now())
+  
+  // JSON fields for complex data
+  customerData          String?  // JSON
+  billingAddress        String?  // JSON
+  shippingAddress       String?  // JSON
+  lineItems             String   // JSON
+  taxLines              String   // JSON
+  discountApplications  String   // JSON
+  shippingLines         String   // JSON
+  noteAttributes        String   // JSON
+  tags                  String   // JSON
+  
+  // Additional fields
+  note                  String?
+  gateway               String?
+  sourceIdentifier      String?
+  sourceUrl             String?
+  deviceId              String?
+  browserIp             String?
+  landingSite           String?
+  referringSite         String?
+  
+  @@unique([shop, shopifyOrderId])
+  @@index([shop, orderDate])
+  @@index([shop, financialStatus])
+  @@index([shop, fulfillmentStatus])
+}

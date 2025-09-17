@@ -256,3 +256,122 @@ export function generateTrackingId() {
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `${prefix}${timestamp}${random}`;
 }
+
+export function generateLabelNumber() {
+  // Generate a unique label number
+  const prefix = "LBL";
+  const timestamp = Date.now().toString();
+  const random = Math.random().toString(36).substring(2, 4).toUpperCase();
+  return `${prefix}${timestamp}${random}`;
+}
+
+// Get all shipping labels with filtering and pagination
+export async function getAllShippingLabels(shop, options = {}) {
+  const {
+    page = 1,
+    limit = 10,
+    search = "",
+    status = "",
+    sortBy = "createdAt",
+    sortOrder = "desc"
+  } = options;
+
+  const skip = (page - 1) * limit;
+  
+  // Build where clause
+  const where = { shop };
+  
+  if (search) {
+    where.OR = [
+      { labelNumber: { contains: search, mode: 'insensitive' } },
+      { customerName: { contains: search, mode: 'insensitive' } },
+      { trackingId: { contains: search, mode: 'insensitive' } },
+      { orderId: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+  
+  if (status) {
+    where.status = status;
+  }
+
+  // Get total count
+  const total = await db.shippingLabel.count({ where });
+  
+  // Get labels
+  const labels = await db.shippingLabel.findMany({
+    where,
+    skip,
+    take: limit,
+    orderBy: { [sortBy]: sortOrder },
+  });
+
+  return {
+    labels,
+    total,
+    totalPages: Math.ceil(total / limit),
+  };
+}
+
+// Get shipping label statistics
+export async function getShippingLabelStats(shop) {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  
+  const [total, thisMonth, shipped, pending] = await Promise.all([
+    db.shippingLabel.count({ where: { shop } }),
+    db.shippingLabel.count({ 
+      where: { 
+        shop,
+        createdAt: { gte: startOfMonth }
+      }
+    }),
+    db.shippingLabel.count({ 
+      where: { 
+        shop,
+        status: { in: ['shipped', 'delivered'] }
+      }
+    }),
+    db.shippingLabel.count({ 
+      where: { 
+        shop,
+        status: { in: ['draft', 'printed'] }
+      }
+    }),
+  ]);
+
+  return {
+    total,
+    thisMonth,
+    shipped,
+    pending,
+  };
+}
+
+// Bulk delete shipping labels
+export async function bulkDeleteShippingLabels(shop, labelIds) {
+  return await db.shippingLabel.deleteMany({
+    where: {
+      shop,
+      id: { in: labelIds },
+    },
+  });
+}
+
+// Get recent shipping labels
+export async function getRecentShippingLabels(shop, limit = 5) {
+  return await db.shippingLabel.findMany({
+    where: { shop },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  });
+}
+
+// Get labels by IDs
+export async function getShippingLabelsByIds(shop, labelIds) {
+  return await db.shippingLabel.findMany({
+    where: {
+      shop,
+      id: { in: labelIds },
+    },
+  });
+}
