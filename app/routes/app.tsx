@@ -24,6 +24,7 @@ export default function App() {
         <Link to="/app" rel="home">
           Dashboard
         </Link>
+        <Link to="/app/admin">Admin Panel</Link>
         <Link to="/app/invoices">Invoices</Link>
         <Link to="/app/invoice-designer">Invoice Designer</Link>
         <Link to="/app/labels">Shipping Labels</Link>
