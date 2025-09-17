@@ -54,6 +54,9 @@ model Invoice {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   
+  // Relations
+  notificationLogs  NotificationLog[]
+  
   @@index([shop])
   @@index([orderId])
 }
@@ -87,6 +90,9 @@ model ShippingLabel {
   barcode         String?
   qrCode          String?
   createdAt       DateTime  @default(now())
+  
+  // Relations
+  notificationLogs NotificationLog[]
   
   @@index([shop])
   @@index([orderId])
@@ -159,8 +165,50 @@ model Order {
   landingSite           String?
   referringSite         String?
   
+  // Relations
+  notificationLogs      NotificationLog[]
+  
   @@unique([shop, shopifyOrderId])
   @@index([shop, orderDate])
   @@index([shop, financialStatus])
   @@index([shop, fulfillmentStatus])
+}
+
+model NotificationLog {
+  id             String   @id @default(cuid())
+  type           String   // EMAIL, WHATSAPP, SMS, BULK
+  event          String   // INVOICE_SENT, SHIPPING_NOTIFICATION, PAYMENT_REMINDER, etc.
+  recipientId    String?
+  recipientEmail String?
+  recipientPhone String?
+  invoiceId      String?
+  orderId        String?
+  labelId        String?
+  status         String   // SUCCESS, FAILED, PENDING
+  error          String?
+  metadata       String?  // JSON string for additional data
+  recipientCount Int?     // For bulk operations
+  shopId         String
+  createdAt      DateTime @default(now())
+
+  // Relations
+  invoice Invoice? @relation(fields: [invoiceId], references: [id])
+  order   Order?   @relation(fields: [orderId], references: [id])
+  label   ShippingLabel? @relation(fields: [labelId], references: [id])
+
+  @@map("notification_logs")
+}
+
+model BulkOperationLog {
+  id           String   @id @default(cuid())
+  type         String   // BULK_INVOICE_GENERATION, BULK_LABEL_GENERATION, etc.
+  totalItems   Int
+  successCount Int
+  failureCount Int
+  options      String?  // JSON string for operation options
+  shopId       String
+  completedAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@map("bulk_operation_logs")
 }

@@ -29,6 +29,8 @@ export default function App() {
         <Link to="/app/invoice-designer">Invoice Designer</Link>
         <Link to="/app/labels">Shipping Labels</Link>
         <Link to="/app/customers">Customers</Link>
+        <Link to="/app/notifications">Notifications</Link>
+        <Link to="/app/bulk-operations">Bulk Operations</Link>
         <Link to="/app/settings">Settings</Link>
         <Link to="/app/icons">Icons Gallery</Link>
       </NavMenu>
