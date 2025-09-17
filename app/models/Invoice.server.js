@@ -345,20 +345,7 @@ export async function getInvoicesByIds(ids) {
   });
 }
 
-// Update invoice
-export async function updateInvoice(id, data) {
-  return await db.invoice.update({
-    where: { id },
-    data
-  });
-}
-
-// Delete invoice
-export async function deleteInvoice(id) {
-  return await db.invoice.delete({
-    where: { id }
-  });
-}
+// Additional functions for invoice management
 
 // Bulk delete invoices
 export async function bulkDeleteInvoices(ids) {
