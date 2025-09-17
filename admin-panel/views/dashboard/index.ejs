@@ -1,0 +1,401 @@
+<% layout('layout') -%>
+
+<!-- Dashboard Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1"><%= stats.totalCustomers.toLocaleString() %></h3>
+                    <p class="mb-0">Total Customers</p>
+                </div>
+                <i class="fas fa-users fa-2x opacity-75"></i>
+            </div>
+            <div class="mt-2">
+                <small>
+                    <i class="fas fa-arrow-up me-1"></i>
+                    +<%= stats.newCustomersThisMonth %> this month
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1">₹<%= stats.monthlyRevenue.toLocaleString() %></h3>
+                    <p class="mb-0">Monthly Revenue</p>
+                </div>
+                <i class="fas fa-rupee-sign fa-2x opacity-75"></i>
+            </div>
+            <div class="mt-2">
+                <small>
+                    <i class="fas fa-arrow-up me-1"></i>
+                    +12.5% from last month
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1"><%= stats.activeSubscriptions.toLocaleString() %></h3>
+                    <p class="mb-0">Active Subscriptions</p>
+                </div>
+                <i class="fas fa-credit-card fa-2x opacity-75"></i>
+            </div>
+            <div class="mt-2">
+                <small>
+                    <i class="fas fa-arrow-down me-1"></i>
+                    <%= stats.churnRate %>% churn rate
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card danger">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1"><%= stats.supportTickets %></h3>
+                    <p class="mb-0">Support Tickets</p>
+                </div>
+                <i class="fas fa-life-ring fa-2x opacity-75"></i>
+            </div>
+            <div class="mt-2">
+                <small>
+                    <i class="fas fa-clock me-1"></i>
+                    2.4h avg response time
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Revenue Growth
+                </h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <input type="radio" class="btn-check" name="revenueChart" id="monthly" checked>
+                    <label class="btn btn-outline-primary" for="monthly">Monthly</label>
+                    
+                    <input type="radio" class="btn-check" name="revenueChart" id="weekly">
+                    <label class="btn btn-outline-primary" for="weekly">Weekly</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Plan Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="planChart" height="200"></canvas>
+                <div class="mt-3">
+                    <% stats.planDistribution.forEach(plan => { %>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span><%= plan.plan %></span>
+                            <span class="badge bg-primary"><%= plan.percentage %>%</span>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity and Top Customers -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Recent Activity
+                </h5>
+                <a href="/analytics" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <% stats.recentActivity.forEach(activity => { %>
+                        <div class="list-group-item border-0 px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <% if (activity.type === 'subscription') { %>
+                                            <i class="fas fa-credit-card text-primary"></i>
+                                        <% } else if (activity.type === 'invoice') { %>
+                                            <i class="fas fa-file-invoice text-success"></i>
+                                        <% } else if (activity.type === 'support') { %>
+                                            <i class="fas fa-life-ring text-warning"></i>
+                                        <% } else if (activity.type === 'payment') { %>
+                                            <i class="fas fa-rupee-sign text-success"></i>
+                                        <% } %>
+                                    </div>
+                                    <div>
+                                        <p class="mb-1"><%= activity.message %></p>
+                                        <small class="text-muted">
+                                            <strong><%= activity.customer %></strong>
+                                            • <%= new Date(activity.timestamp).toLocaleString() %>
+                                        </small>
+                                    </div>
+                                </div>
+                                <% if (activity.amount) { %>
+                                    <span class="badge bg-success">₹<%= activity.amount.toLocaleString() %></span>
+                                <% } else if (activity.priority) { %>
+                                    <span class="badge bg-<%= activity.priority === 'high' ? 'danger' : 'warning' %>">
+                                        <%= activity.priority %>
+                                    </span>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-trophy me-2"></i>
+                    Top Customers
+                </h5>
+                <a href="/customers" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <% stats.topCustomers.forEach((customer, index) => { %>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <span class="badge bg-<%= index === 0 ? 'warning' : index === 1 ? 'secondary' : 'dark' %> rounded-pill">
+                                    <%= index + 1 %>
+                                </span>
+                            </div>
+                            <div>
+                                <p class="mb-0 fw-semibold"><%= customer.name %></p>
+                                <small class="text-muted">
+                                    <%= customer.invoices %> invoices • <%= customer.plan %>
+                                </small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <p class="mb-0 fw-semibold">₹<%= customer.revenue.toLocaleString() %></p>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <button class="btn btn-outline-primary w-100" onclick="sendNotification()">
+                            <i class="fas fa-bell me-2"></i>
+                            Send Notification
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <button class="btn btn-outline-success w-100" onclick="generateReport()">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Generate Report
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <button class="btn btn-outline-info w-100" onclick="syncData()">
+                            <i class="fas fa-sync me-2"></i>
+                            Sync Data
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/settings" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-cog me-2"></i>
+                            Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Revenue Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+const revenueChart = new Chart(revenueCtx, {
+    type: 'line',
+    data: {
+        labels: [<% stats.monthlyGrowth.forEach((month, index) => { %>'<%= month.month %>'<%= index < stats.monthlyGrowth.length - 1 ? ',' : '' %><% }) %>],
+        datasets: [{
+            label: 'Revenue (₹)',
+            data: [<% stats.monthlyGrowth.forEach((month, index) => { %><%= month.revenue %><%= index < stats.monthlyGrowth.length - 1 ? ',' : '' %><% }) %>],
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }, {
+            label: 'Customers',
+            data: [<% stats.monthlyGrowth.forEach((month, index) => { %><%= month.customers %><%= index < stats.monthlyGrowth.length - 1 ? ',' : '' %><% }) %>],
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5, 150, 105, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            yAxisID: 'y1'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            }
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                ticks: {
+                    callback: function(value) {
+                        return '₹' + value.toLocaleString();
+                    }
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                grid: {
+                    drawOnChartArea: false,
+                },
+            }
+        }
+    }
+});
+
+// Plan Distribution Chart
+const planCtx = document.getElementById('planChart').getContext('2d');
+const planChart = new Chart(planCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [<% stats.planDistribution.forEach((plan, index) => { %>'<%= plan.plan %>'<%= index < stats.planDistribution.length - 1 ? ',' : '' %><% }) %>],
+        datasets: [{
+            data: [<% stats.planDistribution.forEach((plan, index) => { %><%= plan.count %><%= index < stats.planDistribution.length - 1 ? ',' : '' %><% }) %>],
+            backgroundColor: ['#2563eb', '#059669', '#d97706'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Quick Actions
+function sendNotification() {
+    if (confirm('Send notification to all customers?')) {
+        fetch('/dashboard/api/quick-action', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'send_notification',
+                data: { type: 'general', message: 'System maintenance scheduled' }
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+
+function generateReport() {
+    fetch('/dashboard/api/quick-action', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: 'generate_report',
+            data: { type: 'monthly', format: 'pdf' }
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    });
+}
+
+function syncData() {
+    if (confirm('Sync data from all Shopify stores?')) {
+        fetch('/dashboard/api/quick-action', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'sync_data',
+                data: { source: 'shopify', full_sync: false }
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+
+// Auto-refresh dashboard every 5 minutes
+setInterval(() => {
+    location.reload();
+}, 300000);
+</script>

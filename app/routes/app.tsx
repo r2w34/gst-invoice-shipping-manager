@@ -25,6 +25,7 @@ export default function App() {
           Dashboard
         </Link>
         <Link to="/app/invoices">Invoices</Link>
+        <Link to="/app/invoice-designer">Invoice Designer</Link>
         <Link to="/app/labels">Shipping Labels</Link>
         <Link to="/app/customers">Customers</Link>
         <Link to="/app/settings">Settings</Link>
