@@ -27,14 +27,76 @@ import { getAppSettings } from "../models/AppSettings.server";
 import Icon3D from "../components/Icon3D";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   
   const customers = await getCustomers(session.shop, { limit: 100 });
   const settings = await getAppSettings(session.shop);
 
+  // Check if orderId is provided in URL parameters
+  const url = new URL(request.url);
+  const orderIdParam = url.searchParams.get("orderId");
+  let orderData = null;
+
+  if (orderIdParam) {
+    try {
+      const response = await admin.graphql(`
+        query getOrder($id: ID!) {
+          order(id: $id) {
+            id
+            name
+            email
+            createdAt
+            customer {
+              id
+              displayName
+              email
+              phone
+            }
+            lineItems(first: 100) {
+              edges {
+                node {
+                  id
+                  title
+                  quantity
+                  variant {
+                    id
+                    title
+                    weight
+                    weightUnit
+                  }
+                }
+              }
+            }
+            shippingAddress {
+              address1
+              address2
+              city
+              province
+              provinceCode
+              country
+              countryCodeV2
+              zip
+            }
+          }
+        }
+      `, {
+        variables: { id: `gid://shopify/Order/${orderIdParam}` }
+      });
+
+      const result = await response.json();
+      if (result.data?.order) {
+        orderData = result.data.order;
+      }
+    } catch (error) {
+      console.error("Error fetching order:", error);
+    }
+  }
+
   return json({
     customers: customers.customers,
     settings,
+    orderData,
+    orderIdParam,
   });
 };
 
@@ -172,7 +234,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function NewShippingLabel() {
-  const { customers, settings } = useLoaderData<typeof loader>();
+  const { customers, settings, orderData, orderIdParam } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const navigate = useNavigate();
@@ -183,20 +245,41 @@ export default function NewShippingLabel() {
 
   // State management
   const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [orderIdInput, setOrderIdInput] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState(orderData);
+  const [orderIdInput, setOrderIdInput] = useState(orderIdParam || "");
   const [isCod, setIsCod] = useState(false);
   const [isFragile, setIsFragile] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  const [autoFilledData, setAutoFilledData] = useState({
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    customerAddress: "",
-    customerCity: "",
-    customerState: "",
-    customerPincode: "",
-    weight: "",
+  const [autoFilledData, setAutoFilledData] = useState(() => {
+    if (orderData && orderData.shippingAddress) {
+      const address = orderData.shippingAddress;
+      const totalWeight = orderData.lineItems.edges.reduce((total, edge) => {
+        const weight = edge.node.variant?.weight || 0;
+        const quantity = edge.node.quantity;
+        return total + (weight * quantity);
+      }, 0);
+
+      return {
+        customerName: orderData.customer?.displayName || "",
+        customerEmail: orderData.customer?.email || "",
+        customerPhone: orderData.customer?.phone || "",
+        customerAddress: `${address.address1}${address.address2 ? ', ' + address.address2 : ''}`,
+        customerCity: address.city || "",
+        customerState: address.province || "",
+        customerPincode: address.zip || "",
+        weight: totalWeight > 0 ? totalWeight.toString() : "",
+      };
+    }
+    return {
+      customerName: "",
+      customerEmail: "",
+      customerPhone: "",
+      customerAddress: "",
+      customerCity: "",
+      customerState: "",
+      customerPincode: "",
+      weight: "",
+    };
   });
 
   // Handle order fetching

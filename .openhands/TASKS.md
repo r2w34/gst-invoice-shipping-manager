@@ -1,25 +1,23 @@
 # Task List
 
-1. ✅ Analyze admin-panel-v2 structure and requirements
+1. ✅ Analyze PRD requirements vs current implementation gaps
 
-2. ✅ Implement complete React Admin v2 application
+2. ✅ Create orders listing page to show all Shopify orders
 
-3. ✅ Create API endpoints for React Admin data provider
+3. ✅ Fix Shopify orders not fetching in main app
 
-4. ✅ Configure deployment settings for gadmin.indigenservices.com
+4. ✅ Fix customer/order data auto-population in invoice and label generation
 
-5. ✅ Add missing CRM option to Shopify app navigation
+5. ✅ Implement proper PDF generation for invoices and labels
 
-6. ✅ Remove admin panel route from Shopify app
+6. ✅ Add barcode/QR code generation for shipping labels
 
-7. ✅ Implement automatic data fetching from Shopify orders/customers for invoices and labels
+7. ✅ Implement missing bulk order processing features
 
-8. ✅ Fix missing subscription management route causing 404 error
+8. ✅ Add missing GST compliance fields and calculations
 
-9. ✅ Commit and push all recent changes to git repository
+9. 🔄 Deploy all app fixes to VPS server
 
-10. 🔄 Deploy Admin Panel v2 to production server
-
-11. ⏳ Test deployed admin panel functionality
+10. ⏳ Test all automation features end-to-end
 
 

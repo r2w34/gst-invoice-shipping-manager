@@ -34,7 +34,82 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return redirect("/app/settings");
   }
 
-  return json({ settings, shop });
+  // Check if orderId is provided in URL parameters
+  const url = new URL(request.url);
+  const orderIdParam = url.searchParams.get("orderId");
+  let orderData = null;
+
+  if (orderIdParam) {
+    try {
+      const response = await admin.graphql(`
+        query getOrder($id: ID!) {
+          order(id: $id) {
+            id
+            name
+            email
+            createdAt
+            totalPriceSet {
+              shopMoney {
+                amount
+                currencyCode
+              }
+            }
+            customer {
+              id
+              displayName
+              email
+              phone
+            }
+            lineItems(first: 100) {
+              edges {
+                node {
+                  id
+                  title
+                  quantity
+                  variant {
+                    id
+                    title
+                    price
+                  }
+                }
+              }
+            }
+            shippingAddress {
+              address1
+              address2
+              city
+              province
+              provinceCode
+              country
+              countryCodeV2
+              zip
+            }
+            billingAddress {
+              address1
+              address2
+              city
+              province
+              provinceCode
+              country
+              countryCodeV2
+              zip
+            }
+          }
+        }
+      `, {
+        variables: { id: `gid://shopify/Order/${orderIdParam}` }
+      });
+
+      const result = await response.json();
+      if (result.data?.order) {
+        orderData = result.data.order;
+      }
+    } catch (error) {
+      console.error("Error fetching order:", error);
+    }
+  }
+
+  return json({ settings, shop, orderData, orderIdParam });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -153,21 +228,41 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function NewInvoice() {
-  const { settings } = useLoaderData<typeof loader>();
+  const { settings, orderData, orderIdParam } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const submit = useSubmit();
 
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [orderIdInput, setOrderIdInput] = useState("");
-  const [formState, setFormState] = useState({
-    orderId: "",
-    orderName: "",
-    customerName: "",
-    customerGSTIN: "",
-    billingAddress: null,
-    shippingAddress: null,
-    items: [],
+  const [selectedOrder, setSelectedOrder] = useState(orderData);
+  const [orderIdInput, setOrderIdInput] = useState(orderIdParam || "");
+  const [formState, setFormState] = useState(() => {
+    if (orderData) {
+      return {
+        orderId: orderData.id,
+        orderName: orderData.name,
+        customerName: orderData.customer?.displayName || "",
+        customerGSTIN: "",
+        billingAddress: orderData.billingAddress,
+        shippingAddress: orderData.shippingAddress,
+        items: orderData.lineItems.edges.map(edge => ({
+          id: edge.node.id,
+          description: edge.node.title,
+          quantity: edge.node.quantity,
+          price: edge.node.variant?.price || "0",
+          hsnCode: "",
+          taxRate: 18,
+        })),
+      };
+    }
+    return {
+      orderId: "",
+      orderName: "",
+      customerName: "",
+      customerGSTIN: "",
+      billingAddress: null,
+      shippingAddress: null,
+      items: [],
+    };
   });
 
   const isLoading = navigation.state === "submitting";
