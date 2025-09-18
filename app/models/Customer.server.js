@@ -42,7 +42,21 @@ export async function getCustomerByShopifyId(shopifyCustomerId, shop) {
 }
 
 export async function createCustomer(data) {
-  const { shop, shopifyCustomerId, name, gstin, email, phone, notes } = data;
+  const { 
+    shop, 
+    shopifyCustomerId, 
+    name, 
+    gstin, 
+    email, 
+    phone, 
+    notes,
+    address,
+    city,
+    state,
+    pincode,
+    country,
+    isActive = true
+  } = data;
 
   return await db.customer.create({
     data: {
@@ -53,6 +67,12 @@ export async function createCustomer(data) {
       email,
       phone,
       notes,
+      address,
+      city,
+      state,
+      pincode,
+      country,
+      isActive,
     },
   });
 }

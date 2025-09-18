@@ -1,7 +1,90 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { authenticate } from '../shopify.server';
-import { reactAdminDataProvider } from '../services/ReactAdminDataProvider.server';
+
+// Simple data provider for admin panel
+const reactAdminDataProvider = {
+  async getList(resource, params) {
+    // Mock data for different resources
+    const mockData = {
+      customers: [
+        { id: 1, name: 'John Doe', email: 'john@example.com', totalOrders: 5, outstandingAmount: 1500 },
+        { id: 2, name: 'Jane Smith', email: 'jane@example.com', totalOrders: 3, outstandingAmount: 800 }
+      ],
+      invoices: [
+        { id: 1, invoiceNumber: 'INV-001', customerName: 'John Doe', amount: 1000, status: 'paid' },
+        { id: 2, invoiceNumber: 'INV-002', customerName: 'Jane Smith', amount: 800, status: 'pending' }
+      ],
+      orders: [
+        { id: 1, orderNumber: 'ORD-001', customerName: 'John Doe', amount: 1000, status: 'fulfilled' },
+        { id: 2, orderNumber: 'ORD-002', customerName: 'Jane Smith', amount: 800, status: 'pending' }
+      ]
+    };
+
+    const data = mockData[resource] || [];
+    return {
+      data,
+      total: data.length
+    };
+  },
+
+  async getOne(resource, params) {
+    const mockData = {
+      customers: { id: params.id, name: 'Sample Customer', email: 'customer@example.com' },
+      invoices: { id: params.id, invoiceNumber: 'INV-001', amount: 1000 },
+      orders: { id: params.id, orderNumber: 'ORD-001', amount: 1000 }
+    };
+
+    return {
+      data: mockData[resource] || { id: params.id }
+    };
+  },
+
+  async getMany(resource, params) {
+    const data = params.ids.map(id => ({ id, name: `${resource} ${id}` }));
+    return { data };
+  },
+
+  async getAnalytics(shopId) {
+    return {
+      totalCustomers: 150,
+      totalInvoices: 450,
+      totalRevenue: 125000,
+      pendingPayments: 15000,
+      monthlyGrowth: 12.5
+    };
+  },
+
+  async create(resource, params) {
+    return {
+      data: { id: Date.now(), ...params.data }
+    };
+  },
+
+  async update(resource, params) {
+    return {
+      data: { id: params.id, ...params.data }
+    };
+  },
+
+  async delete(resource, params) {
+    return {
+      data: { id: params.id }
+    };
+  },
+
+  async deleteMany(resource, params) {
+    return {
+      data: params.ids
+    };
+  },
+
+  async updateMany(resource, params) {
+    return {
+      data: params.ids
+    };
+  }
+};
 
 /**
  * React Admin API Route

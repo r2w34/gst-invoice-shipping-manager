@@ -25,6 +25,205 @@ import { EnhancedPDFEditor } from '../services/EnhancedPDFEditor.server';
 // Mock template storage (in production, use database)
 const templates = new Map();
 
+// Demo templates
+const demoTemplates = [
+  {
+    id: 'modern-blue',
+    name: 'Modern Blue',
+    description: 'Clean and professional blue-themed template',
+    preview: '/images/templates/modern-blue-preview.png',
+    config: {
+      colors: {
+        primary: '#2563eb',
+        secondary: '#64748b',
+        accent: '#0ea5e9',
+        text: '#1e293b',
+        background: '#ffffff'
+      },
+      fonts: {
+        heading: 'Inter',
+        body: 'Inter',
+        size: {
+          heading: '24px',
+          subheading: '18px',
+          body: '14px',
+          small: '12px'
+        }
+      },
+      layout: {
+        header: 'centered',
+        logo: 'left',
+        spacing: 'normal',
+        borders: true
+      },
+      sections: {
+        companyInfo: true,
+        customerInfo: true,
+        itemsTable: true,
+        taxSummary: true,
+        footer: true,
+        notes: true
+      }
+    }
+  },
+  {
+    id: 'classic-green',
+    name: 'Classic Green',
+    description: 'Traditional green-themed invoice template',
+    preview: '/images/templates/classic-green-preview.png',
+    config: {
+      colors: {
+        primary: '#16a34a',
+        secondary: '#6b7280',
+        accent: '#22c55e',
+        text: '#111827',
+        background: '#ffffff'
+      },
+      fonts: {
+        heading: 'Georgia',
+        body: 'Arial',
+        size: {
+          heading: '22px',
+          subheading: '16px',
+          body: '13px',
+          small: '11px'
+        }
+      },
+      layout: {
+        header: 'left',
+        logo: 'left',
+        spacing: 'compact',
+        borders: true
+      },
+      sections: {
+        companyInfo: true,
+        customerInfo: true,
+        itemsTable: true,
+        taxSummary: true,
+        footer: true,
+        notes: true
+      }
+    }
+  },
+  {
+    id: 'minimal-gray',
+    name: 'Minimal Gray',
+    description: 'Simple and elegant gray-themed template',
+    preview: '/images/templates/minimal-gray-preview.png',
+    config: {
+      colors: {
+        primary: '#374151',
+        secondary: '#9ca3af',
+        accent: '#6b7280',
+        text: '#1f2937',
+        background: '#ffffff'
+      },
+      fonts: {
+        heading: 'Helvetica',
+        body: 'Helvetica',
+        size: {
+          heading: '20px',
+          subheading: '16px',
+          body: '12px',
+          small: '10px'
+        }
+      },
+      layout: {
+        header: 'minimal',
+        logo: 'center',
+        spacing: 'wide',
+        borders: false
+      },
+      sections: {
+        companyInfo: true,
+        customerInfo: true,
+        itemsTable: true,
+        taxSummary: true,
+        footer: false,
+        notes: true
+      }
+    }
+  },
+  {
+    id: 'corporate-red',
+    name: 'Corporate Red',
+    description: 'Bold corporate red-themed template',
+    preview: '/images/templates/corporate-red-preview.png',
+    config: {
+      colors: {
+        primary: '#dc2626',
+        secondary: '#64748b',
+        accent: '#ef4444',
+        text: '#0f172a',
+        background: '#ffffff'
+      },
+      fonts: {
+        heading: 'Arial Black',
+        body: 'Arial',
+        size: {
+          heading: '26px',
+          subheading: '18px',
+          body: '14px',
+          small: '12px'
+        }
+      },
+      layout: {
+        header: 'bold',
+        logo: 'right',
+        spacing: 'normal',
+        borders: true
+      },
+      sections: {
+        companyInfo: true,
+        customerInfo: true,
+        itemsTable: true,
+        taxSummary: true,
+        footer: true,
+        notes: true
+      }
+    }
+  },
+  {
+    id: 'elegant-purple',
+    name: 'Elegant Purple',
+    description: 'Sophisticated purple-themed template',
+    preview: '/images/templates/elegant-purple-preview.png',
+    config: {
+      colors: {
+        primary: '#7c3aed',
+        secondary: '#64748b',
+        accent: '#8b5cf6',
+        text: '#1e293b',
+        background: '#ffffff'
+      },
+      fonts: {
+        heading: 'Times New Roman',
+        body: 'Times New Roman',
+        size: {
+          heading: '24px',
+          subheading: '18px',
+          body: '14px',
+          small: '12px'
+        }
+      },
+      layout: {
+        header: 'elegant',
+        logo: 'center',
+        spacing: 'normal',
+        borders: true
+      },
+      sections: {
+        companyInfo: true,
+        customerInfo: true,
+        itemsTable: true,
+        taxSummary: true,
+        footer: true,
+        notes: true
+      }
+    }
+  }
+];
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
 
@@ -44,6 +243,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({
     template,
     savedTemplates,
+    demoTemplates,
     shopId: session.shop,
   });
 };
