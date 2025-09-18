@@ -117,12 +117,15 @@ model AppSettings {
   sellerGSTIN       String
   sellerName        String
   sellerAddress     String    // JSON string
+  sellerPhone       String?
+  sellerEmail       String?
   invoicePrefix     String    @default("INV")
   invoiceStartNumber Int      @default(1)
   currentInvoiceNumber Int    @default(1)
   termsAndConditions String?
   digitalSignature  String?   // Base64 encoded image
   storeLogo         String?   // Base64 encoded image
+  onboardingComplete Boolean  @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }

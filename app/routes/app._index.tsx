@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { json, redirect } from "@remix-run/node";
+import { useLoaderData, useNavigate, useSearchParams } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -13,6 +13,7 @@ import {
   Badge,
   ProgressBar,
   EmptyState,
+  Banner,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { 
@@ -29,6 +30,7 @@ import { getInvoices } from "../models/Invoice.server";
 import { getShippingLabels } from "../models/ShippingLabel.server";
 import { getCustomers } from "../models/Customer.server";
 import { getAppSettings, getSubscription, initializeAppSettings, initializeSubscription } from "../models/AppSettings.server";
+import { SuccessAnimation } from "../components/SuccessAnimation";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticateOrBypass(request);
@@ -38,12 +40,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   await initializeAppSettings(shop);
   await initializeSubscription(shop);
 
+  // Check if onboarding is needed
+  const settings = await getAppSettings(shop);
+  if (!settings?.onboardingComplete) {
+    return redirect("/app/onboarding");
+  }
+
   // Get dashboard data
-  const [invoices, labels, customers, settings, subscription] = await Promise.all([
+  const [invoices, labels, customers, subscription] = await Promise.all([
     getInvoices(shop, { limit: 5 }),
     getShippingLabels(shop, { limit: 5 }),
     getCustomers(shop, { limit: 5 }),
-    getAppSettings(shop),
     getSubscription(shop),
   ]);
 
@@ -74,8 +81,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function Index() {
   const data = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const { recentInvoices, recentLabels, recentCustomers, settings, subscription, stats } = data;
+
+  // Check if user just completed onboarding
+  useEffect(() => {
+    if (searchParams.get("onboarded") === "true") {
+      setShowSuccessAnimation(true);
+    }
+  }, [searchParams]);
 
   const getSubscriptionStatus = () => {
     if (!subscription) return { status: "Unknown", color: "critical" as const };
@@ -117,6 +133,20 @@ export default function Index() {
       </TitleBar>
       
       <BlockStack gap="500">
+        {/* Onboarding Success Banner */}
+        {searchParams.get("onboarded") === "true" && (
+          <Banner
+            title="Welcome to GST Invoice Manager!"
+            status="success"
+            onDismiss={() => {
+              const newSearchParams = new URLSearchParams(searchParams);
+              newSearchParams.delete("onboarded");
+              navigate(`/app?${newSearchParams.toString()}`, { replace: true });
+            }}
+          >
+            <p>Your company information has been set up successfully. You can now start creating GST-compliant invoices and shipping labels.</p>
+          </Banner>
+        )}
         {needsSetup && (
           <Card>
             <BlockStack gap="300">
@@ -193,24 +223,28 @@ export default function Index() {
                       <div 
                         style={{ 
                           textAlign: 'center', 
-                          padding: '20px', 
+                          padding: '24px', 
                           cursor: 'pointer',
-                          borderRadius: '8px',
-                          transition: 'all 0.2s ease-in-out',
+                          borderRadius: '12px',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          border: '2px solid transparent',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          color: 'white',
+                          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.2)',
                         }}
                         onClick={() => navigate("/app/invoices/new")}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#f8fafc';
-                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.2)';
                         }}
                       >
                         <BlockStack gap="200" align="center">
                           <AnimatedIcon3D name="create" size="large" hover={true} />
-                          <Text variant="bodyMd">Create Invoice</Text>
+                          <Text variant="bodyMd" tone="inherit">Create Invoice</Text>
                         </BlockStack>
                       </div>
                     </Layout.Section>
@@ -218,24 +252,28 @@ export default function Index() {
                       <div 
                         style={{ 
                           textAlign: 'center', 
-                          padding: '20px', 
+                          padding: '24px', 
                           cursor: 'pointer',
-                          borderRadius: '8px',
-                          transition: 'all 0.2s ease-in-out',
+                          borderRadius: '12px',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          border: '2px solid transparent',
+                          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                          color: 'white',
+                          boxShadow: '0 4px 15px rgba(240, 147, 251, 0.2)',
                         }}
                         onClick={() => navigate("/app/labels/new")}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#f8fafc';
-                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(240, 147, 251, 0.3)';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(240, 147, 251, 0.2)';
                         }}
                       >
                         <BlockStack gap="200" align="center">
                           <AnimatedIcon3D name="package" size="large" hover={true} />
-                          <Text variant="bodyMd">Create Label</Text>
+                          <Text variant="bodyMd" tone="inherit">Create Label</Text>
                         </BlockStack>
                       </div>
                     </Layout.Section>
@@ -243,24 +281,28 @@ export default function Index() {
                       <div 
                         style={{ 
                           textAlign: 'center', 
-                          padding: '20px', 
+                          padding: '24px', 
                           cursor: 'pointer',
-                          borderRadius: '8px',
-                          transition: 'all 0.2s ease-in-out',
+                          borderRadius: '12px',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          border: '2px solid transparent',
+                          background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                          color: 'white',
+                          boxShadow: '0 4px 15px rgba(79, 172, 254, 0.2)',
                         }}
-                        onClick={() => navigate("/app/icons")}
+                        onClick={() => navigate("/app/bulk-operations")}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#f8fafc';
-                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(79, 172, 254, 0.3)';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(79, 172, 254, 0.2)';
                         }}
                       >
                         <BlockStack gap="200" align="center">
                           <AnimatedIcon3D name="digital" size="large" hover={true} pulse={true} />
-                          <Text variant="bodyMd">View 3D Icons</Text>
+                          <Text variant="bodyMd" tone="inherit">Bulk Operations</Text>
                         </BlockStack>
                       </div>
                     </Layout.Section>
@@ -463,6 +505,19 @@ export default function Index() {
           </Layout.Section>
         </Layout>
       </BlockStack>
+      
+      {/* Success Animation */}
+      <SuccessAnimation
+        show={showSuccessAnimation}
+        title="Welcome to GST Invoice Manager!"
+        message="Your company setup is complete. You're ready to start creating invoices and labels!"
+        onComplete={() => {
+          setShowSuccessAnimation(false);
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete("onboarded");
+          navigate(`/app?${newSearchParams.toString()}`, { replace: true });
+        }}
+      />
     </Page>
   );
 }

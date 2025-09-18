@@ -45,6 +45,38 @@ export async function updateAppSettings(shop, data) {
   };
 }
 
+export async function createOrUpdateAppSettings(shop, data) {
+  const existingSettings = await getAppSettings(shop);
+  
+  // Convert onboarding data to our format
+  const settingsData = {
+    sellerGSTIN: data.gstin,
+    sellerName: data.companyName,
+    sellerAddress: {
+      address1: data.address,
+      address2: "",
+      city: data.city,
+      province: data.state,
+      country: "India",
+      zip: data.pincode,
+    },
+    sellerPhone: data.phone,
+    sellerEmail: data.email,
+    invoicePrefix: data.invoicePrefix || "INV",
+    currentInvoiceNumber: data.currentInvoiceNumber || 1,
+    onboardingComplete: data.onboardingComplete || false,
+  };
+
+  if (existingSettings) {
+    return await updateAppSettings(shop, settingsData);
+  } else {
+    return await createAppSettings({
+      shop,
+      ...settingsData,
+    });
+  }
+}
+
 export async function initializeAppSettings(shop, initialData = {}) {
   const existingSettings = await getAppSettings(shop);
   
