@@ -16,8 +16,10 @@
 
 8. ✅ Fix missing subscription management route causing 404 error
 
-9. ⏳ Deploy Admin Panel v2 to production server
+9. ✅ Commit and push all recent changes to git repository
 
-10. ⏳ Test deployed admin panel functionality
+10. 🔄 Deploy Admin Panel v2 to production server
+
+11. ⏳ Test deployed admin panel functionality
 
 
