@@ -24,14 +24,14 @@ import {
   AnalyticsIcon,
   AnimatedIcon3D 
 } from "../components/Icon3D";
-import { authenticate } from "../shopify.server";
+import { authenticateOrBypass } from "../utils/auth.server";
 import { getInvoices } from "../models/Invoice.server";
 import { getShippingLabels } from "../models/ShippingLabel.server";
 import { getCustomers } from "../models/Customer.server";
 import { getAppSettings, getSubscription, initializeAppSettings, initializeSubscription } from "../models/AppSettings.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateOrBypass(request);
   const { shop } = session;
 
   // Initialize app settings and subscription if they don't exist

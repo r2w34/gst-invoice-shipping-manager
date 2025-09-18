@@ -254,12 +254,12 @@
                         <div class="dropdown">
                             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-user-circle me-2"></i>
-                                <%= user.name %>
+                                <%= user && user.name ? user.name : 'Admin' %>
                             </button>
                             <ul class="dropdown-menu">
                                 <li><h6 class="dropdown-header">Logged in as</h6></li>
-                                <li><span class="dropdown-item-text"><strong><%= user.username %></strong></span></li>
-                                <li><span class="dropdown-item-text">Role: <%= user.role %></span></li>
+                                <li><span class="dropdown-item-text"><strong><%= user && user.username ? user.username : 'admin' %></strong></span></li>
+                                <li><span class="dropdown-item-text">Role: <%= user && user.role ? user.role : 'Administrator' %></span></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="/change-password">Change Password</a></li>
                                 <li>

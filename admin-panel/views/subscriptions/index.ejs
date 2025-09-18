@@ -1,0 +1,144 @@
+<!-- Subscriptions Management -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Subscription Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Sync</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            Create Plan
+        </button>
+    </div>
+</div>
+
+<!-- Subscription Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1"><%= stats.active.toLocaleString() %></h3>
+                    <p class="mb-0">Active Subscriptions</p>
+                </div>
+                <i class="fas fa-credit-card fa-2x opacity-75"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1">₹<%= stats.monthlyRevenue.toLocaleString() %></h3>
+                    <p class="mb-0">Monthly Revenue</p>
+                </div>
+                <i class="fas fa-rupee-sign fa-2x opacity-75"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1"><%= stats.trial %></h3>
+                    <p class="mb-0">Trial Users</p>
+                </div>
+                <i class="fas fa-clock fa-2x opacity-75"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1"><%= Math.round((stats.cancelled / stats.total) * 100) %>%</h3>
+                    <p class="mb-0">Churn Rate</p>
+                </div>
+                <i class="fas fa-chart-line fa-2x opacity-75"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Subscription Plans -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4>Subscription Plans</h4>
+        <div class="row">
+            <% plans.forEach(plan => { %>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><%= plan.name %></h5>
+                        <span class="badge bg-<%= plan.name === 'Premium' ? 'success' : plan.name === 'Standard' ? 'warning' : 'secondary' %>">
+                            <%= plan.subscribers %> users
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="text-primary">₹<%= plan.price %><small class="text-muted">/month</small></h3>
+                        <ul class="list-unstyled">
+                            <% plan.features.forEach(feature => { %>
+                            <li><i class="fas fa-check text-success me-2"></i><%= feature %></li>
+                            <% }); %>
+                        </ul>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-sm">Edit Plan</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Subscriptions -->
+<div class="row">
+    <div class="col-12">
+        <h4>Recent Subscription Activity</h4>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Plan</th>
+                        <th>Action</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% subscriptions.forEach(sub => { %>
+                    <tr>
+                        <td>
+                            <div>
+                                <div><%= sub.customerName %></div>
+                                <small class="text-muted"><%= sub.customerEmail %></small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-<%= sub.plan === 'Premium' ? 'success' : sub.plan === 'Standard' ? 'warning' : 'secondary' %>">
+                                <%= sub.plan %>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-<%= sub.status === 'active' ? 'success' : sub.status === 'trial' ? 'info' : sub.status === 'cancelled' ? 'danger' : 'warning' %>">
+                                <%= sub.status.charAt(0).toUpperCase() + sub.status.slice(1) %>
+                            </span>
+                        </td>
+                        <td>₹<%= sub.amount.toLocaleString() %></td>
+                        <td><%= new Date(sub.startDate).toLocaleDateString() %></td>
+                        <td>
+                            <span class="badge bg-<%= sub.status === 'active' ? 'success' : sub.status === 'trial' ? 'info' : 'danger' %>">
+                                <%= sub.status.charAt(0).toUpperCase() + sub.status.slice(1) %>
+                            </span>
+                        </td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

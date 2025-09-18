@@ -39,8 +39,70 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const formData = await request.formData();
+  const action = formData.get("_action");
+
+  // Handle order data fetching
+  if (action === "fetchOrder") {
+    const orderId = formData.get("orderId") as string;
+    
+    try {
+      const response = await admin.graphql(`
+        query getOrder($id: ID!) {
+          order(id: $id) {
+            id
+            name
+            email
+            createdAt
+            customer {
+              id
+              displayName
+              email
+              phone
+            }
+            lineItems(first: 100) {
+              edges {
+                node {
+                  id
+                  title
+                  quantity
+                  variant {
+                    id
+                    title
+                    weight
+                    weightUnit
+                  }
+                }
+              }
+            }
+            shippingAddress {
+              address1
+              address2
+              city
+              province
+              provinceCode
+              country
+              countryCodeV2
+              zip
+            }
+          }
+        }
+      `, {
+        variables: { id: orderId }
+      });
+
+      const result = await response.json();
+      
+      if (result.data?.order) {
+        return json({ orderData: result.data.order });
+      } else {
+        return json({ errors: { orderId: "Order not found" } }, { status: 404 });
+      }
+    } catch (error) {
+      return json({ errors: { orderId: "Failed to fetch order" } }, { status: 500 });
+    }
+  }
 
   try {
     const labelData = {
@@ -121,28 +183,86 @@ export default function NewShippingLabel() {
 
   // State management
   const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderIdInput, setOrderIdInput] = useState("");
   const [isCod, setIsCod] = useState(false);
   const [isFragile, setIsFragile] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [autoFilledData, setAutoFilledData] = useState({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    customerAddress: "",
+    customerCity: "",
+    customerState: "",
+    customerPincode: "",
+    weight: "",
+  });
+
+  // Handle order fetching
+  const handleFetchOrder = useCallback(() => {
+    if (orderIdInput.trim()) {
+      const form = document.querySelector('form') as HTMLFormElement;
+      if (form) {
+        const formData = new FormData();
+        formData.append("_action", "fetchOrder");
+        formData.append("orderId", `gid://shopify/Order/${orderIdInput.trim()}`);
+        
+        // Submit the form to fetch order data
+        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+        form.dispatchEvent(submitEvent);
+      }
+    }
+  }, [orderIdInput]);
 
   // Handle customer selection
   const handleCustomerChange = useCallback((customerId: string) => {
     setSelectedCustomer(customerId);
     const customer = customers.find(c => c.id === customerId);
     if (customer) {
-      // Auto-fill customer details
-      const form = document.querySelector('form') as HTMLFormElement;
-      if (form) {
-        (form.elements.namedItem('customerName') as HTMLInputElement).value = customer.name;
-        (form.elements.namedItem('customerEmail') as HTMLInputElement).value = customer.email || '';
-        (form.elements.namedItem('customerPhone') as HTMLInputElement).value = customer.phone || '';
-        (form.elements.namedItem('customerAddress') as HTMLInputElement).value = customer.address || '';
-        (form.elements.namedItem('customerCity') as HTMLInputElement).value = customer.city || '';
-        (form.elements.namedItem('customerState') as HTMLInputElement).value = customer.state || '';
-        (form.elements.namedItem('customerPincode') as HTMLInputElement).value = customer.pincode || '';
-      }
+      setAutoFilledData({
+        customerName: customer.name,
+        customerEmail: customer.email || '',
+        customerPhone: customer.phone || '',
+        customerAddress: customer.address || '',
+        customerCity: customer.city || '',
+        customerState: customer.state || '',
+        customerPincode: customer.pincode || '',
+        weight: "",
+      });
     }
   }, [customers]);
+
+  // Update form state when order data is received
+  if (actionData?.orderData && !selectedOrder) {
+    const order = actionData.orderData;
+    setSelectedOrder(order);
+    
+    // Calculate total weight from line items
+    let totalWeight = 0;
+    order.lineItems.edges.forEach(edge => {
+      const variant = edge.node.variant;
+      if (variant?.weight && variant?.weightUnit) {
+        const weight = parseFloat(variant.weight);
+        const quantity = parseInt(edge.node.quantity);
+        // Convert to kg if needed
+        const weightInKg = variant.weightUnit === 'GRAMS' ? weight / 1000 : weight;
+        totalWeight += weightInKg * quantity;
+      }
+    });
+
+    const shippingAddr = order.shippingAddress;
+    setAutoFilledData({
+      customerName: order.customer?.displayName || "",
+      customerEmail: order.customer?.email || "",
+      customerPhone: order.customer?.phone || "",
+      customerAddress: shippingAddr ? `${shippingAddr.address1}${shippingAddr.address2 ? ', ' + shippingAddr.address2 : ''}` : "",
+      customerCity: shippingAddr?.city || "",
+      customerState: shippingAddr?.province || "",
+      customerPincode: shippingAddr?.zip || "",
+      weight: totalWeight > 0 ? totalWeight.toFixed(2) : "",
+    });
+  }
 
   // Customer options
   const customerOptions = [
@@ -252,16 +372,51 @@ export default function NewShippingLabel() {
                       </InlineStack>
                     </Text>
                     
-                    <FormLayout>
-                      <TextField
-                        label="Order ID (Optional)"
-                        name="orderId"
-                        value={formData.orderId || ""}
-                        placeholder="Enter Shopify order ID"
-                        helpText="Link this label to a specific order"
-                        autoComplete="off"
-                      />
-                    </FormLayout>
+                    {!selectedOrder ? (
+                      <FormLayout>
+                        <TextField
+                          label="Order ID (Optional)"
+                          value={orderIdInput}
+                          onChange={setOrderIdInput}
+                          placeholder="Enter order ID (numbers only, e.g., 1234567890)"
+                          helpText="Enter the numeric order ID to auto-fill customer and shipping details"
+                          error={errors.orderId}
+                          autoComplete="off"
+                        />
+                        <Button
+                          onClick={handleFetchOrder}
+                          loading={isSubmitting && navigation.formData?.get("_action") === "fetchOrder"}
+                          disabled={!orderIdInput.trim()}
+                        >
+                          Fetch Order Details
+                        </Button>
+                      </FormLayout>
+                    ) : (
+                      <BlockStack gap="300">
+                        <InlineStack align="space-between">
+                          <Text as="h3" variant="headingSm">
+                            Order {selectedOrder.name} - Details Auto-Filled
+                          </Text>
+                          <Button onClick={() => {
+                            setSelectedOrder(null);
+                            setOrderIdInput("");
+                            setAutoFilledData({
+                              customerName: "",
+                              customerEmail: "",
+                              customerPhone: "",
+                              customerAddress: "",
+                              customerCity: "",
+                              customerState: "",
+                              customerPincode: "",
+                              weight: "",
+                            });
+                          }}>
+                            Change Order
+                          </Button>
+                        </InlineStack>
+                        <input type="hidden" name="orderId" value={selectedOrder.id} />
+                      </BlockStack>
+                    )}
                   </BlockStack>
                 </Card>
 
@@ -290,7 +445,8 @@ export default function NewShippingLabel() {
                         <TextField
                           label="Customer Name"
                           name="customerName"
-                          value={formData.customerName || ""}
+                          value={autoFilledData.customerName || formData.customerName || ""}
+                          onChange={(value) => setAutoFilledData({ ...autoFilledData, customerName: value })}
                           error={errors.customerName}
                           required
                           autoComplete="name"
@@ -300,7 +456,8 @@ export default function NewShippingLabel() {
                           label="Email"
                           name="customerEmail"
                           type="email"
-                          value={formData.customerEmail || ""}
+                          value={autoFilledData.customerEmail || formData.customerEmail || ""}
+                          onChange={(value) => setAutoFilledData({ ...autoFilledData, customerEmail: value })}
                           error={errors.customerEmail}
                           autoComplete="email"
                         />
@@ -311,7 +468,8 @@ export default function NewShippingLabel() {
                           label="Phone"
                           name="customerPhone"
                           type="tel"
-                          value={formData.customerPhone || ""}
+                          value={autoFilledData.customerPhone || formData.customerPhone || ""}
+                          onChange={(value) => setAutoFilledData({ ...autoFilledData, customerPhone: value })}
                           error={errors.customerPhone}
                           autoComplete="tel"
                         />
@@ -320,7 +478,8 @@ export default function NewShippingLabel() {
                       <TextField
                         label="Address"
                         name="customerAddress"
-                        value={formData.customerAddress || ""}
+                        value={autoFilledData.customerAddress || formData.customerAddress || ""}
+                        onChange={(value) => setAutoFilledData({ ...autoFilledData, customerAddress: value })}
                         error={errors.customerAddress}
                         multiline={2}
                         required
@@ -331,7 +490,8 @@ export default function NewShippingLabel() {
                         <TextField
                           label="City"
                           name="customerCity"
-                          value={formData.customerCity || ""}
+                          value={autoFilledData.customerCity || formData.customerCity || ""}
+                          onChange={(value) => setAutoFilledData({ ...autoFilledData, customerCity: value })}
                           error={errors.customerCity}
                           required
                           autoComplete="address-level2"
@@ -341,7 +501,8 @@ export default function NewShippingLabel() {
                           label="State"
                           name="customerState"
                           options={stateOptions}
-                          value={formData.customerState || ""}
+                          value={autoFilledData.customerState || formData.customerState || ""}
+                          onChange={(value) => setAutoFilledData({ ...autoFilledData, customerState: value })}
                           error={errors.customerState}
                           required
                         />
@@ -349,7 +510,8 @@ export default function NewShippingLabel() {
                         <TextField
                           label="Pincode"
                           name="customerPincode"
-                          value={formData.customerPincode || ""}
+                          value={autoFilledData.customerPincode || formData.customerPincode || ""}
+                          onChange={(value) => setAutoFilledData({ ...autoFilledData, customerPincode: value })}
                           error={errors.customerPincode}
                           required
                           autoComplete="postal-code"
@@ -395,12 +557,14 @@ export default function NewShippingLabel() {
                           label="Weight (kg)"
                           name="weight"
                           type="number"
-                          value={formData.weight || ""}
+                          value={autoFilledData.weight || formData.weight || ""}
+                          onChange={(value) => setAutoFilledData({ ...autoFilledData, weight: value })}
                           error={errors.weight}
                           step="0.1"
                           min="0.1"
                           required
                           autoComplete="off"
+                          helpText={selectedOrder ? "Auto-calculated from order items" : "Enter package weight"}
                         />
                         
                         <TextField

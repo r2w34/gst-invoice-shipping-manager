@@ -17,7 +17,7 @@ import {
   Checkbox,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { authenticate } from "../shopify.server";
+import { authenticateOrBypass } from "../utils/auth.server";
 import { SettingsIcon, AnimatedIcon3D } from "../components/Icon3D";
 import { 
   getAppSettings, 
@@ -27,7 +27,7 @@ import {
 } from "../models/AppSettings.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateOrBypass(request);
   const { shop } = session;
 
   const settings = await getAppSettings(shop) || await initializeAppSettings(shop);
@@ -36,7 +36,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateOrBypass(request);
   const { shop } = session;
 
   const formData = await request.formData();

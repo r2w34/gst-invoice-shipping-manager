@@ -100,6 +100,7 @@ router.get('/', async (req, res) => {
     res.status(500).render('error', {
       title: 'Dashboard Error',
       message: 'Failed to load dashboard data',
+      status: 500,
       error: process.env.NODE_ENV === 'development' ? error : {},
     });
   }

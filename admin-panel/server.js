@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const expressLayouts = require('express-ejs-layouts');
 require('dotenv').config();
 
 const app = express();
@@ -50,9 +51,19 @@ app.use(session({
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use(expressLayouts);
+app.set('layout', 'layout');
 
 // Static files
 app.use('/static', express.static(path.join(__dirname, 'public')));
+
+// Global template variables middleware
+app.use((req, res, next) => {
+  res.locals.currentPage = res.locals.currentPage || '';
+  res.locals.user = res.locals.user || null;
+  res.locals.title = res.locals.title || 'Admin Panel';
+  next();
+});
 
 // Authentication middleware
 const requireAuth = (req, res, next) => {
@@ -94,6 +105,7 @@ app.use((err, req, res, next) => {
   res.status(500).render('error', {
     title: 'Server Error',
     message: 'An internal server error occurred',
+    status: 500,
     error: process.env.NODE_ENV === 'development' ? err : {},
   });
 });
@@ -103,6 +115,7 @@ app.use((req, res) => {
   res.status(404).render('error', {
     title: 'Page Not Found',
     message: 'The requested page could not be found',
+    status: 404,
     error: {},
   });
 });

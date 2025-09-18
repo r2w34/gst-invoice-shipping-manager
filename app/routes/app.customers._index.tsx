@@ -22,12 +22,12 @@ import {
   Spinner,
 } from "@shopify/polaris";
 import { useState, useCallback, useEffect } from "react";
-import { authenticate } from "../shopify.server";
+import { authenticateOrBypass } from "../utils/auth.server";
 import { getCustomers, deleteCustomer, exportCustomersToCSV } from "../models/Customer.server";
 import Icon3D from "../components/Icon3D";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateOrBypass(request);
   const url = new URL(request.url);
   
   const page = parseInt(url.searchParams.get("page") || "1");
@@ -69,7 +69,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateOrBypass(request);
   const formData = await request.formData();
   const action = formData.get("action");
 

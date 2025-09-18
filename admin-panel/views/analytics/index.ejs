@@ -1,0 +1,211 @@
+<!-- Analytics Dashboard -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Analytics & Reports</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Export Report</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Schedule Report</button>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Time Period
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Last 7 days</a></li>
+                <li><a class="dropdown-item" href="#">Last 30 days</a></li>
+                <li><a class="dropdown-item" href="#">Last 3 months</a></li>
+                <li><a class="dropdown-item" href="#">Last year</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1">₹<%= analytics.summary.totalRevenue.toLocaleString() %></h3>
+                    <p class="mb-0">Total Revenue</p>
+                </div>
+                <i class="fas fa-rupee-sign fa-2x opacity-75"></i>
+            </div>
+            <div class="mt-2">
+                <small class="text-success">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    +<%= analytics.summary.monthlyGrowthRate %>% from last month
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1"><%= analytics.summary.totalCustomers.toLocaleString() %></h3>
+                    <p class="mb-0">Total Customers</p>
+                </div>
+                <i class="fas fa-users fa-2x opacity-75"></i>
+            </div>
+            <div class="mt-2">
+                <small class="text-success">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    +<%= analytics.summary.customerGrowthRate %>% from last month
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1">₹<%= analytics.summary.averageRevenuePerUser %></h3>
+                    <p class="mb-0">Avg Revenue Per User</p>
+                </div>
+                <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+            </div>
+            <div class="mt-2">
+                <small class="text-success">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    +<%= analytics.summary.monthlyGrowthRate %>% from last month
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1"><%= analytics.summary.totalCustomers %></h3>
+                    <p class="mb-0">Active Users</p>
+                </div>
+                <i class="fas fa-users fa-2x opacity-75"></i>
+            </div>
+            <div class="mt-2">
+                <small class="text-success">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    +<%= analytics.summary.customerGrowthRate %>% from last month
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Plan Distribution -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Plan Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h4 class="text-success"><%= analytics.planDistribution.premium.count %></h4>
+                            <p class="mb-0">Premium</p>
+                            <small class="text-muted">₹<%= analytics.planDistribution.premium.revenue.toLocaleString() %></small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h4 class="text-warning"><%= analytics.planDistribution.standard.count %></h4>
+                            <p class="mb-0">Standard</p>
+                            <small class="text-muted">₹<%= analytics.planDistribution.standard.revenue.toLocaleString() %></small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h4 class="text-secondary"><%= analytics.planDistribution.basic.count %></h4>
+                            <p class="mb-0">Basic</p>
+                            <small class="text-muted">₹<%= analytics.planDistribution.basic.revenue.toLocaleString() %></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Usage Analytics -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Feature Usage</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Invoice Generation</span>
+                        <span><%= analytics.featureUsage.invoiceGeneration.usage %>%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: <%= analytics.featureUsage.invoiceGeneration.usage %>%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Shipping Labels</span>
+                        <span><%= analytics.featureUsage.shippingLabels.usage %>%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" style="width: <%= analytics.featureUsage.shippingLabels.usage %>%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>WhatsApp Sharing</span>
+                        <span><%= analytics.featureUsage.whatsappSharing.usage %>%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-info" style="width: <%= analytics.featureUsage.whatsappSharing.usage %>%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Bulk Operations</span>
+                        <span><%= analytics.featureUsage.bulkOperations.usage %>%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-warning" style="width: <%= analytics.featureUsage.bulkOperations.usage %>%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Geographic Distribution</h5>
+            </div>
+            <div class="card-body">
+                <% analytics.geographicData.forEach((geo, index) => { %>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-sm me-3">
+                            <div class="avatar-title bg-primary rounded-circle">
+                                <%= index + 1 %>
+                            </div>
+                        </div>
+                        <div>
+                            <h6 class="mb-0"><%= geo.state %></h6>
+                            <small class="text-muted"><%= geo.customers %> customers</small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div>₹<%= geo.revenue.toLocaleString() %></div>
+                        <small class="text-muted">Revenue</small>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Simple placeholder charts - would be replaced with actual Chart.js implementation
+console.log('Analytics page loaded successfully');
+</script>

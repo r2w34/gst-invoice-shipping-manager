@@ -1,0 +1,232 @@
+<!-- Settings -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Settings</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-primary">
+            <i class="fas fa-save me-1"></i>
+            Save Changes
+        </button>
+    </div>
+</div>
+
+<!-- Settings Navigation -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+            <button class="nav-link active" id="v-pills-general-tab" data-bs-toggle="pill" data-bs-target="#v-pills-general" type="button" role="tab">
+                <i class="fas fa-cog me-2"></i>General
+            </button>
+            <button class="nav-link" id="v-pills-billing-tab" data-bs-toggle="pill" data-bs-target="#v-pills-billing" type="button" role="tab">
+                <i class="fas fa-credit-card me-2"></i>Billing
+            </button>
+            <button class="nav-link" id="v-pills-email-tab" data-bs-toggle="pill" data-bs-target="#v-pills-email" type="button" role="tab">
+                <i class="fas fa-envelope me-2"></i>Email
+            </button>
+            <button class="nav-link" id="v-pills-security-tab" data-bs-toggle="pill" data-bs-target="#v-pills-security" type="button" role="tab">
+                <i class="fas fa-shield-alt me-2"></i>Security
+            </button>
+            <button class="nav-link" id="v-pills-api-tab" data-bs-toggle="pill" data-bs-target="#v-pills-api" type="button" role="tab">
+                <i class="fas fa-code me-2"></i>API Settings
+            </button>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="tab-content" id="v-pills-tabContent">
+            <!-- General Settings -->
+            <div class="tab-pane fade show active" id="v-pills-general" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">General Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">App Name</label>
+                                    <input type="text" class="form-control" value="<%= settings.appName %>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Support Email</label>
+                                    <input type="email" class="form-control" value="<%= settings.supportEmail %>">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Default Currency</label>
+                                    <select class="form-select">
+                                        <option value="INR" <%= settings.currency === 'INR' ? 'selected' : '' %>>INR (₹)</option>
+                                        <option value="USD" <%= settings.currency === 'USD' ? 'selected' : '' %>>USD ($)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Timezone</label>
+                                    <select class="form-select">
+                                        <option value="Asia/Kolkata" <%= settings.timezone === 'Asia/Kolkata' ? 'selected' : '' %>>Asia/Kolkata</option>
+                                        <option value="UTC" <%= settings.timezone === 'UTC' ? 'selected' : '' %>>UTC</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">App Description</label>
+                                <textarea class="form-control" rows="3"><%= settings.description %></textarea>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="maintenanceMode" <%= settings.maintenanceMode ? 'checked' : '' %>>
+                                <label class="form-check-label" for="maintenanceMode">
+                                    Maintenance Mode
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billing Settings -->
+            <div class="tab-pane fade" id="v-pills-billing" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Billing Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Trial Period (days)</label>
+                                    <input type="number" class="form-control" value="<%= settings.trialDays %>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Grace Period (days)</label>
+                                    <input type="number" class="form-control" value="<%= settings.gracePeriod %>">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Payment Gateway</label>
+                                <select class="form-select">
+                                    <option value="shopify" <%= settings.paymentGateway === 'shopify' ? 'selected' : '' %>>Shopify Billing API</option>
+                                    <option value="razorpay" <%= settings.paymentGateway === 'razorpay' ? 'selected' : '' %>>Razorpay</option>
+                                    <option value="stripe" <%= settings.paymentGateway === 'stripe' ? 'selected' : '' %>>Stripe</option>
+                                </select>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="autoSuspend" <%= settings.autoSuspend ? 'checked' : '' %>>
+                                <label class="form-check-label" for="autoSuspend">
+                                    Auto-suspend expired accounts
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Settings -->
+            <div class="tab-pane fade" id="v-pills-email" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Email Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Host</label>
+                                    <input type="text" class="form-control" value="<%= settings.smtpHost %>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Port</label>
+                                    <input type="number" class="form-control" value="<%= settings.smtpPort %>">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Username</label>
+                                    <input type="text" class="form-control" value="<%= settings.smtpUsername %>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Password</label>
+                                    <input type="password" class="form-control" value="<%= settings.smtpPassword %>">
+                                </div>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="smtpSecure" <%= settings.smtpSecure ? 'checked' : '' %>>
+                                <label class="form-check-label" for="smtpSecure">
+                                    Use SSL/TLS
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary">Test Email Configuration</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="tab-pane fade" id="v-pills-security" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Security Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Session Timeout (minutes)</label>
+                                    <input type="number" class="form-control" value="<%= settings.sessionTimeout %>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Max Login Attempts</label>
+                                    <input type="number" class="form-control" value="<%= settings.maxLoginAttempts %>">
+                                </div>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="twoFactorAuth" <%= settings.twoFactorAuth ? 'checked' : '' %>>
+                                <label class="form-check-label" for="twoFactorAuth">
+                                    Enable Two-Factor Authentication
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="ipWhitelist" <%= settings.ipWhitelist ? 'checked' : '' %>>
+                                <label class="form-check-label" for="ipWhitelist">
+                                    Enable IP Whitelisting
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Settings -->
+            <div class="tab-pane fade" id="v-pills-api" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">API Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="mb-3">
+                                <label class="form-label">Shopify App Client ID</label>
+                                <input type="text" class="form-control" value="<%= settings.shopifyClientId %>">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Shopify App Secret</label>
+                                <input type="password" class="form-control" value="<%= settings.shopifySecret %>">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">WhatsApp API Token</label>
+                                <input type="password" class="form-control" value="<%= settings.whatsappToken %>">
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">API Rate Limit (requests/minute)</label>
+                                    <input type="number" class="form-control" value="<%= settings.apiRateLimit %>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Webhook Timeout (seconds)</label>
+                                    <input type="number" class="form-control" value="<%= settings.webhookTimeout %>">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

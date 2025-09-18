@@ -5,12 +5,12 @@ import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 
-import { authenticate } from "../shopify.server";
+import { authenticateOrBypass } from "../utils/auth.server";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  await authenticateOrBypass(request);
 
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
 };
@@ -24,11 +24,10 @@ export default function App() {
         <Link to="/app" rel="home">
           Dashboard
         </Link>
-        <Link to="/app/admin">Admin Panel</Link>
         <Link to="/app/invoices">Invoices</Link>
         <Link to="/app/invoice-designer">Invoice Designer</Link>
         <Link to="/app/labels">Shipping Labels</Link>
-        <Link to="/app/customers">Customers</Link>
+        <Link to="/app/customers">CRM & Customers</Link>
         <Link to="/app/notifications">Notifications</Link>
         <Link to="/app/bulk-operations">Bulk Operations</Link>
         <Link to="/app/settings">Settings</Link>

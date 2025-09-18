@@ -22,14 +22,14 @@ import {
   Pagination,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { authenticate } from "../shopify.server";
+import { authenticateOrBypass } from "../utils/auth.server";
 import { getAllInvoices, deleteInvoice, bulkDeleteInvoices } from "../models/Invoice.server";
 import { InvoiceIcon, AnimatedIcon3D } from "../components/Icon3D";
 import PDFGenerator from "../services/PDFGenerator.server";
 import { getAppSettings } from "../models/AppSettings.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateOrBypass(request);
   const url = new URL(request.url);
   
   // Get query parameters for filtering and pagination
@@ -61,7 +61,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session } = await authenticateOrBypass(request);
   const formData = await request.formData();
   const action = formData.get("action");
   

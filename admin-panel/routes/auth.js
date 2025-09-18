@@ -33,6 +33,7 @@ router.get('/login', (req, res) => {
     title: 'Admin Login',
     error: req.query.error,
     message: req.query.message,
+    layout: false,
   });
 });
 
@@ -108,6 +109,7 @@ router.get('/forgot-password', (req, res) => {
     title: 'Forgot Password',
     message: req.query.message,
     error: req.query.error,
+    layout: false,
   });
 });
 
@@ -170,6 +172,7 @@ router.get('/change-password', (req, res) => {
     },
     message: req.query.message,
     error: req.query.error,
+    currentPage: 'change-password',
   });
 });
 
