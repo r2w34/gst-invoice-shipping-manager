@@ -270,6 +270,15 @@ app.put('/api/settings/1', (req, res) => {
   res.json(mockSettings);
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    service: 'GST Invoice Manager Admin Panel'
+  });
+});
+
 // Serve React app for all other routes
 app.use((req, res, next) => {
   if (req.path.startsWith('/api')) {

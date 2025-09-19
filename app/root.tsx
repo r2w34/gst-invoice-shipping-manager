@@ -17,6 +17,10 @@ export default function App() {
           rel="stylesheet"
           href="https://cdn.shopify.com/static/fonts/inter/v4/styles.css"
         />
+        {/* App Bridge script for performance tracking and session tokens */}
+        <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+        {/* Debug flag for Web Vitals (remove in production) */}
+        <meta name="shopify-debug" content="true" />
         <Meta />
         <Links />
       </head>

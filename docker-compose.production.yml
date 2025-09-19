@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Main Shopify App
+  gst-invoice-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gst-invoice-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - SHOPIFY_API_KEY=7a6fca531dee436fcecd8536fc3cb72e
+      - SHOPIFY_API_SECRET=bf7ee31d9491a158d2b410a1c5849681
+      - SCOPES=write_products,read_orders,write_orders,read_customers,write_customers
+      - HOST=https://invoiceo.indigenservices.com
+      - SHOPIFY_APP_URL=https://invoiceo.indigenservices.com
+      - DATABASE_URL=file:./prisma/dev.db
+      - PORT=3000
+    volumes:
+      - ./prisma:/app/prisma
+      - ./logs:/app/logs
+      - app_data:/app/data
+    networks:
+      - gst-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Admin Panel
+  gst-admin-panel:
+    build:
+      context: ./admin-panel-v2
+      dockerfile: Dockerfile
+    container_name: gst-admin-panel
+    restart: unless-stopped
+    ports:
+      - "56842:56842"
+    environment:
+      - NODE_ENV=production
+      - PORT=56842
+      - API_URL=http://gst-invoice-app:3000/api/admin
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - gst-network
+    depends_on:
+      - gst-invoice-app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:56842/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  gst-network:
+    driver: bridge
+
+volumes:
+  app_data:
+    driver: local
