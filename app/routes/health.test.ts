@@ -1,0 +1,20 @@
+import { describe, it, expect } from 'vitest';
+import { loader } from './health';
+
+function makeRequest(url = 'http://localhost/health') {
+  return new Request(url);
+}
+
+describe('health route loader', () => {
+  it('returns 200 and json with expected keys', async () => {
+    const response = await loader({ request: makeRequest(), params: {}, context: {} as any });
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data).toHaveProperty('status', 'healthy');
+    expect(data).toHaveProperty('timestamp');
+    expect(data).toHaveProperty('service');
+    expect(data).toHaveProperty('version');
+    expect(data).toHaveProperty('environment');
+    expect(data).toHaveProperty('uptime');
+  });
+});
