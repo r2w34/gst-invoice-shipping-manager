@@ -31,6 +31,7 @@ import { getShippingLabels } from "../models/ShippingLabel.server";
 import { getCustomers } from "../models/Customer.server";
 import { getAppSettings, getSubscription, initializeAppSettings, initializeSubscription } from "../models/AppSettings.server";
 import { SuccessAnimation } from "../components/SuccessAnimation";
+import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticateOrBypass(request);

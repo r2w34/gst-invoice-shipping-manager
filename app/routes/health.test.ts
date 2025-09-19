@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { loader } from './health';
+import { describe, it, expect, beforeAll } from 'vitest';
+
+let loader: any;
+beforeAll(async () => {
+  const mod = await import('./health');
+  loader = mod.loader;
+});
 
 function makeRequest(url = 'http://localhost/health') {
   return new Request(url);
