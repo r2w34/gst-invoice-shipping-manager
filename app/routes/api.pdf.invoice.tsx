@@ -18,10 +18,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (action === "download") {
       // Single invoice download
-      const invoice = await getInvoice(shop, invoiceId);
+      const invoice = await getInvoice(invoiceId, shop);
       if (!invoice) {
         return new Response("Invoice not found", { status: 404 });
       }
+
+      // Load seller settings
+      const settingsRes = await import("../models/AppSettings.server");
+      const { getAppSettings } = settingsRes as any;
+      const settings = await getAppSettings(shop);
+      const sellerAddress = settings?.sellerAddress ? JSON.parse(settings.sellerAddress) : {
+        address1: "",
+        city: "",
+        state: "",
+        pincode: "",
+        country: "India"
+      };
 
       // Convert invoice data to PDF format
       const pdfData = {
@@ -31,9 +43,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         customerGSTIN: invoice.customerGSTIN,
         billingAddress: invoice.billingAddress,
         shippingAddress: invoice.shippingAddress,
-        sellerName: invoice.sellerName,
+        sellerName: settings?.sellerName || "",
         sellerGSTIN: invoice.sellerGSTIN,
-        sellerAddress: invoice.sellerAddress,
+        sellerAddress,
         items: invoice.items.map(item => ({
           description: item.description,
           hsnCode: item.hsnCode || "998314", // Default HSN for services
@@ -42,17 +54,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           rate: item.rate,
           discount: item.discount || 0,
           taxableValue: item.taxableValue,
-          cgstRate: item.cgstRate,
-          cgstAmount: item.cgstAmount,
-          sgstRate: item.sgstRate,
-          sgstAmount: item.sgstAmount,
-          igstRate: item.igstRate,
-          igstAmount: item.igstAmount,
+          cgstRate: item.cgst > 0 ? (item.gstRate / 2) : 0,
+          cgstAmount: item.cgst || 0,
+          sgstRate: item.sgst > 0 ? (item.gstRate / 2) : 0,
+          sgstAmount: item.sgst || 0,
+          igstRate: item.igst > 0 ? item.gstRate : 0,
+          igstAmount: item.igst || 0,
         })),
-        totalTaxableValue: invoice.totalTaxableValue,
-        totalCGST: invoice.totalCGST,
-        totalSGST: invoice.totalSGST,
-        totalIGST: invoice.totalIGST,
+        totalTaxableValue: invoice.taxableValue,
+        totalCGST: invoice.cgst,
+        totalSGST: invoice.sgst,
+        totalIGST: invoice.igst,
         totalInvoiceValue: invoice.totalValue,
         placeOfSupply: invoice.placeOfSupply,
         reverseCharge: invoice.reverseCharge || false,
@@ -73,8 +85,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const invoiceIds = JSON.parse(formData.get("invoiceIds") as string);
       const invoices = [];
 
+      // Load seller settings once
+      const settingsRes = await import("../models/AppSettings.server");
+      const { getAppSettings } = settingsRes as any;
+      const settings = await getAppSettings(shop);
+      const sellerAddress = settings?.sellerAddress ? JSON.parse(settings.sellerAddress) : {
+        address1: "",
+        city: "",
+        state: "",
+        pincode: "",
+        country: "India"
+      };
+
       for (const id of invoiceIds) {
-        const invoice = await getInvoice(shop, id);
+        const invoice = await getInvoice(id, shop);
         if (invoice) {
           invoices.push({
             invoiceNumber: invoice.invoiceNumber,
@@ -83,9 +107,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             customerGSTIN: invoice.customerGSTIN,
             billingAddress: invoice.billingAddress,
             shippingAddress: invoice.shippingAddress,
-            sellerName: invoice.sellerName,
+            sellerName: settings?.sellerName || "",
             sellerGSTIN: invoice.sellerGSTIN,
-            sellerAddress: invoice.sellerAddress,
+            sellerAddress,
             items: invoice.items.map(item => ({
               description: item.description,
               hsnCode: item.hsnCode || "998314",
@@ -94,17 +118,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               rate: item.rate,
               discount: item.discount || 0,
               taxableValue: item.taxableValue,
-              cgstRate: item.cgstRate,
-              cgstAmount: item.cgstAmount,
-              sgstRate: item.sgstRate,
-              sgstAmount: item.sgstAmount,
-              igstRate: item.igstRate,
-              igstAmount: item.igstAmount,
+              cgstRate: item.cgst > 0 ? (item.gstRate / 2) : 0,
+              cgstAmount: item.cgst || 0,
+              sgstRate: item.sgst > 0 ? (item.gstRate / 2) : 0,
+              sgstAmount: item.sgst || 0,
+              igstRate: item.igst > 0 ? item.gstRate : 0,
+              igstAmount: item.igst || 0,
             })),
-            totalTaxableValue: invoice.totalTaxableValue,
-            totalCGST: invoice.totalCGST,
-            totalSGST: invoice.totalSGST,
-            totalIGST: invoice.totalIGST,
+            totalTaxableValue: invoice.taxableValue,
+            totalCGST: invoice.cgst,
+            totalSGST: invoice.sgst,
+            totalIGST: invoice.igst,
             totalInvoiceValue: invoice.totalValue,
             placeOfSupply: invoice.placeOfSupply,
             reverseCharge: invoice.reverseCharge || false,
