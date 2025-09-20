@@ -13,7 +13,7 @@ import { Readable } from 'stream';
 export class BulkOperationsService {
   constructor() {
     this.notificationService = notificationService;
-    this.pdfGenerator = new PDFGenerator();
+    this.pdfGenerator = PDFGenerator;
   }
 
   /**
@@ -48,7 +48,7 @@ export class BulkOperationsService {
           // Generate PDF if requested
           let pdfBuffer = null;
           if (options.generatePDF) {
-            pdfBuffer = await this.pdfGenerator.generateInvoicePDF(invoice);
+            pdfBuffer = await this.pdfGenerator.generateGSTInvoice(/*payload filled above or below*/ invoice);
           }
 
           // Send notifications if requested
@@ -132,7 +132,7 @@ export class BulkOperationsService {
           // Generate PDF if requested
           let pdfBuffer = null;
           if (labelOptions.generatePDF) {
-            pdfBuffer = await this.pdfGenerator.generateLabelPDF(label);
+            pdfBuffer = await this.pdfGenerator.generateShippingLabel(/*payload filled above or below*/ label);
           }
 
           // Send notifications if requested
@@ -214,7 +214,7 @@ export class BulkOperationsService {
               throw new Error('Invoice not found');
             }
 
-            pdfBuffer = await this.pdfGenerator.generateInvoicePDF(invoice);
+            pdfBuffer = await this.pdfGenerator.generateGSTInvoice(/*payload filled above or below*/ invoice);
             filename = `Invoice-${invoice.invoiceNumber}.pdf`;
           } else if (type === 'labels') {
             const label = await db.shippingLabel.findUnique({
@@ -226,7 +226,7 @@ export class BulkOperationsService {
               throw new Error('Label not found');
             }
 
-            pdfBuffer = await this.pdfGenerator.generateLabelPDF(label);
+            pdfBuffer = await this.pdfGenerator.generateShippingLabel(/*payload filled above or below*/ label);
             filename = `Label-${label.trackingId}.pdf`;
           } else {
             throw new Error('Invalid PDF type');
