@@ -1,6 +1,6 @@
 import db from '../db.server';
 import { notificationService } from './NotificationService.server.js';
-import { PDFGenerator } from './PDFGenerator.server.js';
+import { PDFGenerator } from './pdf.server';
 import JSZip from 'jszip';
 import csv from 'csv-parser';
 import { createReadStream } from 'fs';

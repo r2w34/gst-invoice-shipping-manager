@@ -1,5 +1,11 @@
 import { emailService } from './EmailService.server.js';
-import { whatsappService } from './WhatsAppService.server.js';
+const WHATSAPP_ENABLED = process.env.WHATSAPP_ENABLED === 'true';
+let whatsappService = null;
+if (WHATSAPP_ENABLED) {
+  // Lazy-load only if enabled
+  const svc = await import('./WhatsAppService.server.js');
+  whatsappService = svc.whatsappService;
+}
 import db from '../db.server';
 
 /**
@@ -82,7 +88,7 @@ export class NotificationService {
       }
 
       // Send WhatsApp notification
-      if (options.whatsapp !== false && invoice.customer.phone) {
+      if (WHATSAPP_ENABLED && this.whatsappService && options.whatsapp !== false && invoice.customer.phone) {
         try {
           const whatsappResult = await this.whatsappService.sendInvoiceNotification(
             invoice,
@@ -201,7 +207,7 @@ export class NotificationService {
       }
 
       // Send WhatsApp notification
-      if (options.whatsapp !== false && label.customer.phone) {
+      if (WHATSAPP_ENABLED && this.whatsappService && options.whatsapp !== false && label.customer.phone) {
         try {
           const whatsappResult = await this.whatsappService.sendShippingNotification(
             label,
@@ -307,7 +313,7 @@ export class NotificationService {
       }
 
       // Send WhatsApp confirmation
-      if (options.whatsapp !== false && order.customer.phone) {
+      if (WHATSAPP_ENABLED && this.whatsappService && options.whatsapp !== false && order.customer.phone) {
         try {
           const whatsappResult = await this.whatsappService.sendOrderConfirmation(
             order,
@@ -444,7 +450,7 @@ export class NotificationService {
       }
 
       // Send WhatsApp reminder
-      if (options.whatsapp !== false && invoice.customer.phone) {
+      if (WHATSAPP_ENABLED && this.whatsappService && options.whatsapp !== false && invoice.customer.phone) {
         try {
           const whatsappResult = await this.whatsappService.sendPaymentReminder(
             invoice,
@@ -517,7 +523,7 @@ export class NotificationService {
       }
 
       // Send bulk WhatsApp messages
-      if (options.whatsapp !== false) {
+      if (WHATSAPP_ENABLED && this.whatsappService && options.whatsapp !== false) {
         const whatsappRecipients = customers.filter(c => c.phone);
         if (whatsappRecipients.length > 0) {
           const whatsappResults = await this.whatsappService.sendBulkMessages(
@@ -616,7 +622,7 @@ export class NotificationService {
     };
 
     // Send WhatsApp delivery confirmation
-    if (order.customer.phone) {
+    if (WHATSAPP_ENABLED && this.whatsappService && order.customer.phone) {
       try {
         const whatsappResult = await this.whatsappService.sendDeliveryConfirmation(
           order,
@@ -712,7 +718,7 @@ export class NotificationService {
     }
 
     // Test WhatsApp service
-    if (testPhone) {
+    if (WHATSAPP_ENABLED && this.whatsappService && testPhone) {
       try {
         const whatsappResult = await this.whatsappService.testWhatsAppConfiguration(testPhone);
         results.whatsapp = { success: true, result: whatsappResult };

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 
 let loader: any;
 beforeAll(async () => {
-  const mod = await import('./health');
+  const mod = await import('../routes/health');
   loader = mod.loader;
 });
 

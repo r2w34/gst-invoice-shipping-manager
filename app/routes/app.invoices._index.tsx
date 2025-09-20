@@ -22,14 +22,14 @@ import {
   Pagination,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { authenticateOrBypass } from "../utils/auth.server";
-import { getAllInvoices, deleteInvoice, bulkDeleteInvoices } from "../models/Invoice.server";
+import { authenticate } from "../shopify.server";
+import { getAllInvoices, deleteInvoice, bulkDeleteInvoices, getInvoice } from "../models/Invoice.server";
 import { InvoiceIcon, AnimatedIcon3D } from "../components/Icon3D";
-import PDFGenerator from "../services/PDFGenerator.server";
+import { PDFGenerator } from "../services/pdf.server";
 import { getAppSettings } from "../models/AppSettings.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticateOrBypass(request);
+  const { session } = await authenticate.admin(request);
   const url = new URL(request.url);
   
   // Get query parameters for filtering and pagination
@@ -61,7 +61,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticateOrBypass(request);
+  const { session } = await authenticate.admin(request);
   const formData = await request.formData();
   const action = formData.get("action");
   
@@ -79,35 +79,125 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
     
     if (action === "downloadPDF") {
-      const invoiceId = formData.get("invoiceId");
-      const invoice = await getInvoiceById(invoiceId);
+      const invoiceId = formData.get("invoiceId") as string;
+      const invoice = await getInvoice(invoiceId, session.shop);
       const settings = await getAppSettings(session.shop);
-      
-      const pdfGenerator = new PDFGenerator();
-      const pdfBuffer = await pdfGenerator.generateInvoicePDF(invoice, settings);
-      
+
+      if (!invoice) {
+        return json({ success: false, error: "Invoice not found" }, { status: 404 });
+      }
+
+      const sellerAddress = settings?.sellerAddress ? JSON.parse(settings.sellerAddress) : {
+        address1: "",
+        city: "",
+        state: "",
+        pincode: "",
+        country: "India"
+      };
+
+      const pdfData = {
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN'),
+        customerName: invoice.customerName,
+        customerGSTIN: invoice.customerGSTIN,
+        billingAddress: invoice.billingAddress,
+        shippingAddress: invoice.shippingAddress,
+        sellerName: settings?.sellerName || "",
+        sellerGSTIN: invoice.sellerGSTIN,
+        sellerAddress,
+        items: invoice.items.map((item: any) => ({
+          description: item.description,
+          hsnCode: item.hsnCode || "998314",
+          quantity: item.quantity,
+          unit: item.unit || "NOS",
+          rate: item.rate ?? item.price ?? 0,
+          discount: item.discount || 0,
+          taxableValue: item.taxableValue,
+          cgstRate: item.cgst > 0 ? (item.gstRate / 2) : 0,
+          cgstAmount: item.cgst || 0,
+          sgstRate: item.sgst > 0 ? (item.gstRate / 2) : 0,
+          sgstAmount: item.sgst || 0,
+          igstRate: item.igst > 0 ? item.gstRate : 0,
+          igstAmount: item.igst || 0,
+        })),
+        totalTaxableValue: invoice.taxableValue,
+        totalCGST: invoice.cgst,
+        totalSGST: invoice.sgst,
+        totalIGST: invoice.igst,
+        totalInvoiceValue: invoice.totalValue,
+        placeOfSupply: invoice.placeOfSupply,
+        reverseCharge: invoice.reverseCharge || false,
+      };
+
+      const pdfBuffer = await PDFGenerator.generateGSTInvoice(pdfData);
+
       return new Response(pdfBuffer, {
         headers: {
           "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="invoice_${invoice.invoiceNumber}.pdf"`
-        }
+          "Content-Disposition": `attachment; filename="invoice-${invoice.invoiceNumber}.pdf"`,
+        },
       });
     }
     
     if (action === "bulkDownloadPDF") {
-      const invoiceIds = JSON.parse(formData.get("invoiceIds"));
-      const invoices = await getInvoicesByIds(invoiceIds);
+      const invoiceIds = JSON.parse(formData.get("invoiceIds") as string);
       const settings = await getAppSettings(session.shop);
-      
-      const pdfGenerator = new PDFGenerator();
-      const items = invoices.map(invoice => ({ data: invoice, settings }));
-      const zipBuffer = await pdfGenerator.generateBulkPDFs(items, 'invoice');
-      
-      return new Response(zipBuffer, {
-        headers: {
-          "Content-Type": "application/zip",
-          "Content-Disposition": "attachment; filename=\"invoices.zip\""
+
+      const sellerAddress = settings?.sellerAddress ? JSON.parse(settings.sellerAddress) : {
+        address1: "",
+        city: "",
+        state: "",
+        pincode: "",
+        country: "India"
+      };
+
+      const invoicesData = [] as any[];
+      for (const id of invoiceIds) {
+        const invoice = await getInvoice(id, session.shop);
+        if (invoice) {
+          invoicesData.push({
+            invoiceNumber: invoice.invoiceNumber,
+            invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN'),
+            customerName: invoice.customerName,
+            customerGSTIN: invoice.customerGSTIN,
+            billingAddress: invoice.billingAddress,
+            shippingAddress: invoice.shippingAddress,
+            sellerName: settings?.sellerName || "",
+            sellerGSTIN: invoice.sellerGSTIN,
+            sellerAddress,
+            items: invoice.items.map((item: any) => ({
+              description: item.description,
+              hsnCode: item.hsnCode || "998314",
+              quantity: item.quantity,
+              unit: item.unit || "NOS",
+              rate: item.rate ?? item.price ?? 0,
+              discount: item.discount || 0,
+              taxableValue: item.taxableValue,
+              cgstRate: item.cgst > 0 ? (item.gstRate / 2) : 0,
+              cgstAmount: item.cgst || 0,
+              sgstRate: item.sgst > 0 ? (item.gstRate / 2) : 0,
+              sgstAmount: item.sgst || 0,
+              igstRate: item.igst > 0 ? item.gstRate : 0,
+              igstAmount: item.igst || 0,
+            })),
+            totalTaxableValue: invoice.taxableValue,
+            totalCGST: invoice.cgst,
+            totalSGST: invoice.sgst,
+            totalIGST: invoice.igst,
+            totalInvoiceValue: invoice.totalValue,
+            placeOfSupply: invoice.placeOfSupply,
+            reverseCharge: invoice.reverseCharge || false,
+          });
         }
+      }
+
+      const pdfBuffer = await PDFGenerator.generateBulkInvoices(invoicesData);
+
+      return new Response(pdfBuffer, {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="bulk-invoices-${Date.now()}.pdf"`,
+        },
       });
     }
     

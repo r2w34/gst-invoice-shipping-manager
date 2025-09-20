@@ -10,15 +10,8 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - SHOPIFY_API_KEY=7a6fca531dee436fcecd8536fc3cb72e
-      - SHOPIFY_API_SECRET=bf7ee31d9491a158d2b410a1c5849681
-      - SCOPES=write_products,read_orders,write_orders,read_customers,write_customers
-      - HOST=https://invoiceo.indigenservices.com
-      - SHOPIFY_APP_URL=https://invoiceo.indigenservices.com
-      - DATABASE_URL=file:./prisma/dev.db
-      - PORT=3000
+    env_file:
+      - .env.production
     volumes:
       - ./prisma:/app/prisma
       - ./logs:/app/logs
