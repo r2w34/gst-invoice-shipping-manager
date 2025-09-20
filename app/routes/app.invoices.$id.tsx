@@ -24,7 +24,7 @@ import { authenticate } from "../shopify.server";
 import { getInvoiceById, updateInvoice, deleteInvoice } from "../models/Invoice.server";
 import { getAppSettings } from "../models/AppSettings.server";
 import { InvoiceIcon, AnimatedIcon3D } from "../components/Icon3D";
-import PDFGenerator from "../services/PDFGenerator.server";
+import { PDFGenerator } from "../services/pdf.server";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -53,12 +53,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   try {
     if (action === "updateStatus") {
       const status = formData.get("status");
-      await updateInvoice(invoiceId, { status });
+      await updateInvoice(invoiceId as string, session.shop, { status });
       return json({ success: true, message: "Invoice status updated successfully" });
     }
     
     if (action === "delete") {
-      await deleteInvoice(invoiceId);
+      await deleteInvoice(invoiceId as string, session.shop);
       return redirect("/app/invoices");
     }
     
@@ -66,8 +66,49 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       const invoice = await getInvoiceById(invoiceId);
       const settings = await getAppSettings(session.shop);
       
-      const pdfGenerator = new PDFGenerator();
-      const pdfBuffer = await pdfGenerator.generateInvoicePDF(invoice, settings);
+      const sellerAddress = settings?.sellerAddress ? JSON.parse(settings.sellerAddress) : {
+        address1: "",
+        city: "",
+        state: "",
+        pincode: "",
+        country: "India"
+      };
+
+      const pdfData = {
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN'),
+        customerName: invoice.customerName,
+        customerGSTIN: invoice.customerGSTIN,
+        billingAddress: invoice.billingAddress,
+        shippingAddress: invoice.shippingAddress,
+        sellerName: settings?.sellerName || "",
+        sellerGSTIN: invoice.sellerGSTIN,
+        sellerAddress,
+        items: invoice.items.map((item: any) => ({
+          description: item.description,
+          hsnCode: item.hsnCode || "998314",
+          quantity: item.quantity,
+          unit: item.unit || "NOS",
+          rate: item.rate ?? item.price ?? 0,
+          discount: item.discount || 0,
+          taxableValue: item.taxableValue,
+          cgstRate: item.cgst > 0 ? (item.gstRate / 2) : 0,
+          cgstAmount: item.cgst || 0,
+          sgstRate: item.sgst > 0 ? (item.gstRate / 2) : 0,
+          sgstAmount: item.sgst || 0,
+          igstRate: item.igst > 0 ? item.gstRate : 0,
+          igstAmount: item.igst || 0,
+        })),
+        totalTaxableValue: invoice.taxableValue,
+        totalCGST: invoice.cgst,
+        totalSGST: invoice.sgst,
+        totalIGST: invoice.igst,
+        totalInvoiceValue: invoice.totalValue,
+        placeOfSupply: invoice.placeOfSupply,
+        reverseCharge: invoice.reverseCharge || false,
+      };
+
+      const pdfBuffer = await PDFGenerator.generateGSTInvoice(pdfData);
       
       return new Response(pdfBuffer, {
         headers: {

@@ -16,11 +16,11 @@ import {
   Divider,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { authenticateOrBypass } from "../utils/auth.server";
+import { authenticate } from "../shopify.server";
 import { getSubscription, updateSubscription, getAppSettings } from "../models/AppSettings.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticateOrBypass(request);
+  const { session } = await authenticate.admin(request);
   const { shop } = session;
 
   const [subscription, settings] = await Promise.all([
@@ -36,7 +36,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticateOrBypass(request);
+  const { session } = await authenticate.admin(request);
   const { shop } = session;
   const formData = await request.formData();
   const action = formData.get("_action");

@@ -16,11 +16,11 @@ import {
   Divider,
 } from "@shopify/polaris";
 import { CheckIcon } from "@shopify/polaris-icons";
-import { authenticateOrBypass } from "../utils/auth.server";
+import { authenticate } from "../shopify.server";
 import { getAppSettings, createOrUpdateAppSettings } from "../models/AppSettings.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticateOrBypass(request);
+  const { session } = await authenticate.admin(request);
   
   const settings = await getAppSettings(session.shop);
   
@@ -36,7 +36,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticateOrBypass(request);
+  const { session } = await authenticate.admin(request);
   const formData = await request.formData();
   
   const companyName = formData.get("companyName");

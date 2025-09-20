@@ -1,5 +1,11 @@
 import { emailService } from './EmailService.server.js';
-import { whatsappService } from './WhatsAppService.server.js';
+const WHATSAPP_ENABLED = process.env.WHATSAPP_ENABLED === 'true';
+let whatsappService = null;
+if (WHATSAPP_ENABLED) {
+  // Lazy-load only if enabled
+  const svc = await import('./WhatsAppService.server.js');
+  whatsappService = svc.whatsappService;
+}
 import db from '../db.server';
 
 /**
@@ -82,7 +88,7 @@ export class NotificationService {
       }
 
       // Send WhatsApp notification
-      if (options.whatsapp !== false && invoice.customer.phone) {
+      if (WHATSAPP_ENABLED && this.whatsappService && options.whatsapp !== false && invoice.customer.phone) {
         try {
           const whatsappResult = await this.whatsappService.sendInvoiceNotification(
             invoice,
@@ -201,7 +207,7 @@ export class NotificationService {
       }
 
       // Send WhatsApp notification
-      if (options.whatsapp !== false && label.customer.phone) {
+      if (WHATSAPP_ENABLED && this.whatsappService && options.whatsapp !== false && label.customer.phone) {
         try {
           const whatsappResult = await this.whatsappService.sendShippingNotification(
             label,
@@ -307,7 +313,7 @@ export class NotificationService {
       }
 
       // Send WhatsApp confirmation
-      if (options.whatsapp !== false && order.customer.phone) {
+      if (WHATSAPP_ENABLED && this.whatsappService && options.whatsapp !== false && order.customer.phone) {
         try {
           const whatsappResult = await this.whatsappService.sendOrderConfirmation(
             order,
@@ -444,7 +450,7 @@ export class NotificationService {
       }
 
       // Send WhatsApp reminder
-      if (options.whatsapp !== false && invoice.customer.phone) {
+      if (WHATSAPP_ENABLED && this.whatsappService && options.whatsapp !== false && invoice.customer.phone) {
         try {
           const whatsappResult = await this.whatsappService.sendPaymentReminder(
             invoice,
@@ -517,7 +523,7 @@ export class NotificationService {
       }
 
       // Send bulk WhatsApp messages
-      if (options.whatsapp !== false) {
+      if (WHATSAPP_ENABLED && this.whatsappService && options.whatsapp !== false) {
         const whatsappRecipients = customers.filter(c => c.phone);
         if (whatsappRecipients.length > 0) {
           const whatsappResults = await this.whatsappService.sendBulkMessages(
@@ -616,7 +622,7 @@ export class NotificationService {
     };
 
     // Send WhatsApp delivery confirmation
-    if (order.customer.phone) {
+    if (WHATSAPP_ENABLED && this.whatsappService && order.customer.phone) {
       try {
         const whatsappResult = await this.whatsappService.sendDeliveryConfirmation(
           order,
@@ -712,7 +718,7 @@ export class NotificationService {
     }
 
     // Test WhatsApp service
-    if (testPhone) {
+    if (WHATSAPP_ENABLED && this.whatsappService && testPhone) {
       try {
         const whatsappResult = await this.whatsappService.testWhatsAppConfiguration(testPhone);
         results.whatsapp = { success: true, result: whatsappResult };
@@ -738,21 +744,96 @@ export class NotificationService {
   }
 
   /**
-   * Generate invoice PDF (placeholder - integrate with existing PDF service)
+   * Generate invoice PDF via pdf.server
    */
   async generateInvoicePDF(invoice) {
-    // This would integrate with your existing PDF generation service
-    // For now, return a placeholder buffer
-    return Buffer.from('PDF content placeholder');
+    try {
+      const settings = await db.appSettings.findUnique({ where: { shop: invoice.shop } });
+      const sellerAddress = settings?.sellerAddress ? JSON.parse(settings.sellerAddress) : {
+        address1: '', city: '', state: '', pincode: '', country: 'India'
+      };
+      const items = Array.isArray(invoice.items) ? invoice.items : (typeof invoice.items === 'string' ? JSON.parse(invoice.items) : []);
+      const billingAddress = typeof invoice.billingAddress === 'string' ? JSON.parse(invoice.billingAddress) : invoice.billingAddress;
+      const shippingAddress = typeof invoice.shippingAddress === 'string' ? JSON.parse(invoice.shippingAddress) : invoice.shippingAddress;
+      const pdfData = {
+        invoiceNumber: invoice.invoiceNumber,
+        invoiceDate: new Date(invoice.createdAt || invoice.invoiceDate).toLocaleDateString('en-IN'),
+        customerName: invoice.customerName,
+        customerGSTIN: invoice.customerGSTIN,
+        billingAddress,
+        shippingAddress,
+        sellerName: settings?.sellerName || '',
+        sellerGSTIN: invoice.sellerGSTIN,
+        sellerAddress,
+        items: items.map((item) => ({
+          description: item.description || item.title,
+          hsnCode: item.hsnCode || '998314',
+          quantity: item.quantity,
+          unit: item.unit || 'NOS',
+          rate: item.rate ?? item.price ?? 0,
+          discount: item.discount || 0,
+          taxableValue: item.taxableValue ?? (item.quantity * (item.rate ?? item.price ?? 0)),
+          cgstRate: item.cgst > 0 ? (item.gstRate / 2) : 0,
+          cgstAmount: item.cgst || 0,
+          sgstRate: item.sgst > 0 ? (item.gstRate / 2) : 0,
+          sgstAmount: item.sgst || 0,
+          igstRate: item.igst > 0 ? item.gstRate : 0,
+          igstAmount: item.igst || 0,
+        })),
+        totalTaxableValue: invoice.taxableValue,
+        totalCGST: invoice.cgst,
+        totalSGST: invoice.sgst,
+        totalIGST: invoice.igst,
+        totalInvoiceValue: invoice.totalValue,
+        placeOfSupply: invoice.placeOfSupply,
+        reverseCharge: invoice.reverseCharge || false,
+      };
+      const { PDFGenerator } = await import('./pdf.server');
+      return await PDFGenerator.generateGSTInvoice(pdfData);
+    } catch (err) {
+      console.error('generateInvoicePDF failed:', err);
+      return Buffer.from('');
+    }
   }
 
   /**
-   * Generate label PDF (placeholder - integrate with existing PDF service)
+   * Generate label PDF via pdf.server
    */
   async generateLabelPDF(label) {
-    // This would integrate with your existing PDF generation service
-    // For now, return a placeholder buffer
-    return Buffer.from('PDF content placeholder');
+    try {
+      const settings = await db.appSettings.findUnique({ where: { shop: label.shop } });
+      const sellerAddress = settings?.sellerAddress ? JSON.parse(settings.sellerAddress) : {
+        address1: '', city: '', state: '', pincode: '', country: 'India'
+      };
+      const customerAddress = typeof label.customerAddress === 'string' ? JSON.parse(label.customerAddress) : label.customerAddress;
+      const pdfData = {
+        orderName: label.orderName,
+        customerName: label.customerName,
+        customerPhone: label.customer?.phone,
+        shippingAddress: {
+          address1: customerAddress?.address1,
+          address2: customerAddress?.address2,
+          city: customerAddress?.city,
+          state: customerAddress?.province || customerAddress?.state,
+          pincode: customerAddress?.zip || customerAddress?.pincode,
+          country: customerAddress?.country || 'India',
+        },
+        weight: label.weight,
+        dimensions: label.dimensions,
+        trackingId: label.trackingId,
+        courierPartner: label.courierPartner,
+        codAmount: label.codAmount,
+        fragile: label.fragile,
+        sellerName: settings?.sellerName || '',
+        sellerAddress,
+        items: label.items,
+      };
+      const { PDFGenerator } = await import('./pdf.server');
+      return await PDFGenerator.generateShippingLabel(pdfData);
+    } catch (err) {
+      console.error('generateLabelPDF failed:', err);
+      return Buffer.from('');
+    }
   }
 }
 
