@@ -18,10 +18,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (action === "download") {
       // Single label download
-      const label = await getShippingLabel(shop, labelId);
+      const label = await getShippingLabel(labelId, shop);
       if (!label) {
         return new Response("Label not found", { status: 404 });
       }
+
+      // Load seller settings
+      const settingsRes = await import("../models/AppSettings.server");
+      const { getAppSettings } = settingsRes as any;
+      const settings = await getAppSettings(shop);
+      const sellerAddress = settings?.sellerAddress ? JSON.parse(settings.sellerAddress) : {
+        address1: "",
+        city: "",
+        state: "",
+        pincode: "",
+        country: "India",
+      };
 
       // Convert label data to PDF format
       const pdfData = {
@@ -29,11 +41,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         customerName: label.customerName,
         customerPhone: label.customerPhone,
         shippingAddress: {
-          address1: label.customerAddress,
-          city: label.customerCity,
-          state: label.customerState,
-          pincode: label.customerPincode,
-          country: "India",
+          address1: label.customerAddress?.address1,
+          address2: label.customerAddress?.address2,
+          city: label.customerAddress?.city,
+          state: label.customerAddress?.province || label.customerAddress?.state,
+          pincode: label.customerAddress?.zip || label.customerAddress?.pincode,
+          country: label.customerAddress?.country || "India",
         },
         weight: label.weight,
         dimensions: label.dimensions ? {
@@ -45,14 +58,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         courierPartner: label.courierPartner,
         codAmount: label.codAmount,
         fragile: label.fragile,
-        sellerName: "Your Store Name", // This should come from settings
-        sellerAddress: {
-          address1: "Your Store Address",
-          city: "Your City",
-          state: "Your State",
-          pincode: "123456",
-          country: "India",
-        },
+        sellerName: settings?.sellerName || "",
+        sellerAddress,
         items: label.items ? label.items.map(item => ({
           name: item.name,
           quantity: item.quantity,
@@ -75,18 +82,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const labels = [];
 
       for (const id of labelIds) {
-        const label = await getShippingLabel(shop, id);
+        const label = await getShippingLabel(id, shop);
         if (label) {
           labels.push({
             orderName: label.orderName,
             customerName: label.customerName,
             customerPhone: label.customerPhone,
             shippingAddress: {
-              address1: label.customerAddress,
-              city: label.customerCity,
-              state: label.customerState,
-              pincode: label.customerPincode,
-              country: "India",
+              address1: label.customerAddress?.address1,
+              address2: label.customerAddress?.address2,
+              city: label.customerAddress?.city,
+              state: label.customerAddress?.province || label.customerAddress?.state,
+              pincode: label.customerAddress?.zip || label.customerAddress?.pincode,
+              country: label.customerAddress?.country || "India",
             },
             weight: label.weight,
             dimensions: label.dimensions ? {
@@ -98,14 +106,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             courierPartner: label.courierPartner,
             codAmount: label.codAmount,
             fragile: label.fragile,
-            sellerName: "Your Store Name",
-            sellerAddress: {
-              address1: "Your Store Address",
-              city: "Your City",
-              state: "Your State",
-              pincode: "123456",
-              country: "India",
-            },
+            sellerName: settings?.sellerName || "",
+            sellerAddress,
             items: label.items ? label.items.map(item => ({
               name: item.name,
               quantity: item.quantity,
