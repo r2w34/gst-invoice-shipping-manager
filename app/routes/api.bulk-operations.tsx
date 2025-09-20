@@ -2,6 +2,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { authenticate } from '../shopify.server';
 import JSZip from 'jszip';
+import { PDFGenerator } from "../services/pdf.server";
+import { getInvoice } from "../models/Invoice.server";
+import { getShippingLabel } from "../models/ShippingLabel.server";
+import { getAppSettings } from "../models/AppSettings.server";
 
 // Create a simple bulk operations handler for now
 const bulkOperationsService = {
