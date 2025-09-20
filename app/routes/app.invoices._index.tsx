@@ -68,7 +68,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     if (action === "delete") {
       const invoiceId = formData.get("invoiceId");
-      await deleteInvoice(invoiceId);
+      await deleteInvoice(invoiceId as string, session.shop);
       return json({ success: true, message: "Invoice deleted successfully" });
     }
     

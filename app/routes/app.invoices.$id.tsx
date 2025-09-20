@@ -53,12 +53,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   try {
     if (action === "updateStatus") {
       const status = formData.get("status");
-      await updateInvoice(invoiceId, { status });
+      await updateInvoice(invoiceId as string, session.shop, { status });
       return json({ success: true, message: "Invoice status updated successfully" });
     }
     
     if (action === "delete") {
-      await deleteInvoice(invoiceId);
+      await deleteInvoice(invoiceId as string, session.shop);
       return redirect("/app/invoices");
     }
     
