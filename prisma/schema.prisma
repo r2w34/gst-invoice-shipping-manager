@@ -80,22 +80,50 @@ model Customer {
 }
 
 model ShippingLabel {
-  id              String    @id @default(cuid())
-  shop            String
-  orderId         String
-  orderName       String
-  customerName    String
-  customerAddress String    // JSON string
-  trackingId      String?
-  barcode         String?
-  qrCode          String?
-  createdAt       DateTime  @default(now())
-  
-  // Relations
-  notificationLogs NotificationLog[]
-  
-  @@index([shop])
-  @@index([orderId])
+  id                String   @id @default(cuid())
+  shopId            String
+  customerId        String?
+  orderId           String?
+  labelNumber       String   @unique
+  labelSize         String   // "4x6", "A5", "A4_single", "A4_multi"
+  recipientName     String
+  recipientPhone    String?
+  shippingAddress1  String
+  shippingAddress2  String?
+  shippingCity      String
+  shippingState     String
+  shippingPincode   String
+  shippingCountry   String   @default("India")
+  trackingId        String?  @unique
+  courierName       String?
+  includeProducts   Boolean  @default(false)
+  productDetails    String?  // JSON string of products
+  status            String   @default("created") // created, printed, shipped, in_transit, out_for_delivery, delivered, exception, returned
+  bulkOperationId   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  shop              Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer          Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  order             Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  bulkOperation     BulkOperation?    @relation(fields: [bulkOperationId], references: [id], onDelete: SetNull)
+  trackingEvents    TrackingEvent[]
+  notificationLogs  NotificationLog[]
+
+  @@map("shipping_labels")
+}
+
+model TrackingEvent {
+  id                String   @id @default(cuid())
+  shippingLabelId   String
+  eventType         String   // shipped, in_transit, out_for_delivery, delivered, exception, returned, attempted_delivery
+  description       String?
+  location          String?
+  createdAt         DateTime @default(now())
+
+  shippingLabel     ShippingLabel @relation(fields: [shippingLabelId], references: [id], onDelete: Cascade)
+
+  @@map("tracking_events")
 }
 
 model Subscription {
