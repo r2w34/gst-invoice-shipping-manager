@@ -47,7 +47,7 @@
     "bwip-js": "^4.7.0",
     "csv-parser": "^3.2.0",
     "date-fns": "^4.1.0",
-    "fabric": "^6.7.1",
+    "fabric": "^7.0.0",
     "form-data": "^4.0.4",
     "html2canvas": "^1.4.1",
     "isbot": "^5.1.0",
